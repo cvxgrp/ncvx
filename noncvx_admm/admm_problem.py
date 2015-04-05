@@ -19,45 +19,46 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 
 from noncvx_variable import NonCvxVariable
 import cvxpy as cvx
-from cvxpy import settings as s
 import numpy as np
 
 # Use ADMM to attempt non-convex problem.
-def admm(self, rho=0.5, iterations=5, *args, **kwargs):
+def admm(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
     noncvx_vars = []
     for var in self.variables():
         if getattr(var, "noncvx", False):
+            var.init_z(random=random)
             noncvx_vars += [var]
     # Form ADMM problem.
     obj = self.objective._expr
     for var in noncvx_vars:
-        obj = obj + (rho/2)*cvx.sum_entries(cvx.square(var - var.z + var.u))
+        obj = obj + (rho/2)*cvx.sum_squares(var - var.z + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
     # ADMM loop
     for i in range(iterations):
         result = prob.solve(*args, **kwargs)
         for var in noncvx_vars:
-            var.z.value = var.round(var.value + var.u.value)
+            var.z.value = var.project(var.value + var.u.value)
             var.u.value += var.value - var.z.value
     return polish(self, noncvx_vars, *args, **kwargs)
 
 # Use ADMM to attempt non-convex problem.
-def admm2(self, rho=0.5, iterations=5, *args, **kwargs):
+def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
     noncvx_vars = []
     for var in self.variables():
         if getattr(var, "noncvx", False):
+            var.init_z(random=random)
             noncvx_vars += [var]
     # Form ADMM problem.
     obj = self.objective._expr
     for var in noncvx_vars:
-        obj = obj + (rho/2)*cvx.sum_entries(cvx.square(var - var.z + var.u))
+        obj = obj + (rho/2)*cvx.sum_squares(var - var.z + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
     # ADMM loop
     best_so_far = np.inf
     for i in range(iterations):
         result = prob.solve(*args, **kwargs)
         for var in noncvx_vars:
-            var.z.value = var.round(var.value + var.u.value)
+            var.z.value = var.project(var.value + var.u.value)
             var.u.value += var.value - var.z.value
         polished_opt = polish(self, noncvx_vars, *args, **kwargs)
         if polished_opt < best_so_far:

@@ -51,7 +51,7 @@ for i in range(MAX_ITER):
     p = Problem(Minimize(0), constraints)
     rho = random.random()
     result = p.solve(method="admm", rho=rho,
-                     iterations=2, solver=ECOS)
+                     iterations=2)
 
     # Store the result.
     values = [vars[i].value for i in range(VARIABLES)]

@@ -24,11 +24,14 @@ import numpy as np
 class Boolean(NonCvxVariable):
     """ A boolean variable. """
     # Sets the initial z value to a matrix of 0.5's.
-    def init_z(self):
-        self.z.value = np.zeros(self.size) + 0.5
+    def init_z(self, random):
+        if random:
+            self.z.value = np.random.uniform(size=self.size)
+        else:
+            self.z.value = np.zeros(self.size) + 0.5
 
     # All values set rounded to zero or 1.
-    def _round(self, matrix):
+    def _project(self, matrix):
         return np.around(matrix)
 
     # Constrain all entries to be the value in the matrix.

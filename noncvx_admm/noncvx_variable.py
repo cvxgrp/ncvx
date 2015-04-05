@@ -28,12 +28,11 @@ class NonCvxVariable(cvxpy.Variable):
         super(NonCvxVariable, self).__init__(*args, **kwargs)
         self.noncvx = True
         self.z = cvxpy.Parameter(*self.size)
-        self.init_z()
         self.u = cvxpy.Parameter(*self.size)
         self.u.value = cvxopt.matrix(0, self.size, tc='d')
 
     # Initializes the value of the replicant variable.
-    def init_z(self):
+    def init_z(self, random):
         self.z.value = cvxopt.matrix(0, self.size, tc='d')
 
     # Verify that the matrix has the same dimensions as the variable.
@@ -43,19 +42,19 @@ class NonCvxVariable(cvxpy.Variable):
                              "the variable's dimensions."))
 
     # Wrapper to validate matrix.
-    def round(self, matrix):
+    def project(self, matrix):
         self.validate_matrix(matrix)
-        return self._round(matrix)
+        return self._project(matrix)
 
     # Project the matrix into the space defined by the non-convex constraint.
     # Returns the updated matrix.
     @abc.abstractmethod
-    def _round(matrix):
+    def _project(matrix):
         return NotImplemented
 
     # Wrapper to validate matrix and update curvature.
     def fix(self, matrix):
-        matrix = self.round(matrix)
+        matrix = self.project(matrix)
         return self._fix(matrix)
 
     # Fix the variable so it obeys the non-convex constraint.

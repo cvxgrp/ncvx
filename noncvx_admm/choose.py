@@ -28,13 +28,14 @@ class Choose(Boolean):
         self.k = k
         super(Choose, self).__init__(rows, cols, *args, **kwargs)
 
-    # Sets the initial z value to the expected value of each entry.
-    def init_z(self):
-        num_entries = float(self.size[0]*self.size[1])
-        self.z.value = cvxopt.matrix(num_entries/self.k, self.size, tc='d')
+    def init_z(self, random):
+        """Initialize cloned variable.
+        """
+        super(Choose, self).init_z(random)
+        self.z.value = k*self.z.value/self.z.value.sum()
 
     # The k-largest values are set to 1. The remainder are set to 0.
-    def _round(self, matrix):
+    def _project(self, matrix):
         indices = product(xrange(self.size[0]), xrange(self.size[1]))
         v_ind = sorted(indices, key=lambda ind: -matrix[ind])
         for ind in v_ind[0:self.k]:

@@ -28,11 +28,26 @@ class Assign(Boolean):
         assert rows >= cols
         super(Assign, self).__init__(rows=rows, cols=cols, *args, **kwargs)
 
-    def init_z(self):
-        self.z.value = np.ones(self.size)/self.size[1]
+    def init_z(self, random):
+        if random:
+            # Random relaxation of assignment matrix.
+            # convex combination of mn assignment matrices.
+            # This is a distribution over all relaxations.
+            # http://planetmath.org/proofofbirkhoffvonneumanntheorem
+            result = np.zeros(self.size)
+            num_entries = self.size[0]*self.size[1]
+            weights = np.random.uniform(size=num_entries)
+            weights /= weights.sum()
+            for k in range(num_entries):
+                assignment = numpy.random.permutation(num_entries)
+                for j in range(self.size[1]):
+                    result[assignment[j], j] += weights[k]
+            self.z.value = result
+        else:
+            self.z.value = np.ones(self.size)/self.size[1]
 
     # Compute projection with maximal weighted matching.
-    def _round(self, matrix):
+    def _project(self, matrix):
         m = Munkres()
         lists = self.matrix_to_lists(matrix)
         indexes = m.compute(lists)

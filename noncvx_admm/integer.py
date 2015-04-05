@@ -18,13 +18,14 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from noncvx_variable import NonCvxVariable
+import numpy as np
 
 class Integer(NonCvxVariable):
     """ An integer variable. """
     # All values set rounded to the nearest integer.
-    def _round(self, matrix):
-        for i,v in enumerate(matrix):
-            matrix[i] = round(v)
+    def _project(self, matrix):
+        for i, v in enumerate(matrix):
+            matrix[i] = np.around(v)
         return matrix
 
     # Constrain all entries to be the value in the matrix.

@@ -29,7 +29,7 @@ class Card(NonCvxVariable):
         super(Card, self).__init__(rows, cols, *args, **kwargs)
 
     # All values except k-largest (by magnitude) set to zero.
-    def _round(self, matrix):
+    def _project(self, matrix):
         indices = product(xrange(self.size[0]), xrange(self.size[1]))
         v_ind = sorted(indices, key=lambda ind: -abs(matrix[ind]))
         for ind in v_ind[self.k:]:
@@ -40,7 +40,7 @@ class Card(NonCvxVariable):
     # zeros in the matrix.
     def _fix(self, matrix):
         constraints = []
-        rows,cols = intf.size(matrix)
+        rows, cols = intf.size(matrix)
         for i in range(rows):
             for j in range(cols):
                 if matrix[i, j] == 0:
