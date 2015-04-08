@@ -46,6 +46,12 @@ class NonCvxVariable(cvxpy.Variable):
         self.validate_matrix(matrix)
         return self._project(matrix)
 
+    def dist(self, matrix):
+        """Distance from matrix to projection.
+        """
+        proj_mat = self.project(matrix)
+        return cvxpy.norm(cvxpy.vec(matrix - proj_mat), 2).value
+
     # Project the matrix into the space defined by the non-convex constraint.
     # Returns the updated matrix.
     @abc.abstractmethod

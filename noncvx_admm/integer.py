@@ -24,9 +24,7 @@ class Integer(NonCvxVariable):
     """ An integer variable. """
     # All values set rounded to the nearest integer.
     def _project(self, matrix):
-        for i, v in enumerate(matrix):
-            matrix[i] = np.around(v)
-        return matrix
+        return np.around(matrix)
 
     # Constrain all entries to be the value in the matrix.
     def _fix(self, matrix):

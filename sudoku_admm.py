@@ -1,5 +1,5 @@
 from cvxpy import *
-from mixed_integer import *
+from noncvx_admm import *
 import cvxopt
 import numpy as np
 
@@ -58,9 +58,10 @@ for i in range(n):
     constraints += [vstack(*list(row(numbers, i))) == perms()]
     constraints += [vstack(*list(col(numbers, i))) == perms()]
     constraints += [vstack(*list(block(numbers, i))) == perms()]
-#constraints.extend(numbers[k] == solution[k] for k in known)
+constraints.extend(numbers[k] == solution[k] for k in known)
 
 # attempt to solve
-p = Problem(Minimize(sum_entries(abs(numbers-solution))), constraints)
-p.solve(method="admm2", rho=0.5, iterations=25)
-print sum(numbers.value - solution)
+obj = Minimize(0)
+p = Problem(obj, constraints)
+p.solve(method="admm", max_iter=5, restarts=1)
+print numbers.value

@@ -38,8 +38,9 @@ class Choose(Boolean):
     def _project(self, matrix):
         indices = product(xrange(self.size[0]), xrange(self.size[1]))
         v_ind = sorted(indices, key=lambda ind: -matrix[ind])
+        result = np.zeros(self.size)
         for ind in v_ind[0:self.k]:
-            matrix[ind] = 1
+            result[ind] = 1
         for ind in v_ind[self.k:]:
-            matrix[ind] = 0
-        return matrix
+            result[ind] = 0
+        return result

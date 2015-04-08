@@ -32,9 +32,10 @@ class Card(NonCvxVariable):
     def _project(self, matrix):
         indices = product(xrange(self.size[0]), xrange(self.size[1]))
         v_ind = sorted(indices, key=lambda ind: -abs(matrix[ind]))
+        result = matrix.copy()
         for ind in v_ind[self.k:]:
-           matrix[ind] = 0
-        return matrix
+           result[ind] = 0
+        return result
 
     # Constrain all entries to be zero that correspond to
     # zeros in the matrix.

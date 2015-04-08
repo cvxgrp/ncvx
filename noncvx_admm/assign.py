@@ -39,7 +39,7 @@ class Assign(Boolean):
             weights = np.random.uniform(size=num_entries)
             weights /= weights.sum()
             for k in range(num_entries):
-                assignment = numpy.random.permutation(num_entries)
+                assignment = np.random.permutation(self.size[0])
                 for j in range(self.size[1]):
                     result[assignment[j], j] += weights[k]
             self.z.value = result
@@ -49,12 +49,12 @@ class Assign(Boolean):
     # Compute projection with maximal weighted matching.
     def _project(self, matrix):
         m = Munkres()
-        lists = self.matrix_to_lists(matrix)
+        lists = self.matrix_to_lists(-matrix)
         indexes = m.compute(lists)
-        matrix *= 0
+        result = np.zeros(self.size)
         for row, column in indexes:
-            matrix[row, column] = 1
-        return matrix
+            result[row, column] = 1
+        return result
 
     def matrix_to_lists(self, matrix):
         """Convert a matrix to a list of lists.

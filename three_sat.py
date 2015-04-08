@@ -5,7 +5,6 @@ import random
 # 3-SAT problem solved with non-convex ADMM
 # TODO initialize z's at 0.5
 EPSILON = 1e-8
-MAX_ITER = 10
 
 # Randomly generate a feasible 3-SAT problem.
 VARIABLES = 250
@@ -47,11 +46,12 @@ for clause_vars, negated in clauses:
 best_values = VARIABLES*[0]
 best_match = 0
 best_rho = 0
-for i in range(MAX_ITER):
+for i in range(1):
     p = Problem(Minimize(0), constraints)
     rho = random.random()
-    result = p.solve(method="admm", rho=rho,
-                     iterations=2)
+    result = p.solve(method="admm",
+                     max_iter=10, restarts=10,
+                     random=False)
 
     # Store the result.
     values = [vars[i].value for i in range(VARIABLES)]

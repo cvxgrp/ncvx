@@ -22,24 +22,79 @@ import cvxpy as cvx
 import numpy as np
 
 # Use ADMM to attempt non-convex problem.
-def admm(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
+def admm(self, rho=None, max_iter=5, restarts=1,
+         random=False, eps=1e-4, rel_eps=1e-4,
+         *args, **kwargs):
+    # rho is a list of values, one for each restart.
+    if rho is None:
+        rho = [np.random.uniform() for i in range(restarts)]
+    else:
+        assert len(rho) == restarts
+    # Setup the problem.
     noncvx_vars = []
     for var in self.variables():
-        if getattr(var, "noncvx", False):
-            var.init_z(random=random)
+        if isinstance(var, NonCvxVariable):
             noncvx_vars += [var]
     # Form ADMM problem.
+    rho_param = cvx.Parameter(sign="positive")
     obj = self.objective._expr
     for var in noncvx_vars:
-        obj = obj + (rho/2)*cvx.sum_squares(var - var.z + var.u)
+        obj = obj + (rho_param/2)*cvx.sum_squares(var - var.z + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
-    # ADMM loop
-    for i in range(iterations):
-        result = prob.solve(*args, **kwargs)
+    # Algorithm.
+    best_so_far = [np.inf, np.inf, {}]
+    for rho_val in rho:
         for var in noncvx_vars:
-            var.z.value = var.project(var.value + var.u.value)
-            var.u.value += var.value - var.z.value
-    return polish(self, noncvx_vars, *args, **kwargs)
+            var.init_z(random=random)
+        # ADMM loop
+        for k in range(max_iter):
+            rho_param.value = rho_val*(1.5)**k
+            prob.solve(*args, **kwargs)
+            opt_val = self.objective.value
+            noncvx_inf = total_dist(noncvx_vars)
+            # print opt_val, noncvx_inf
+            # Is the infeasibility better than best_so_far?
+            error = get_error(noncvx_vars, eps, rel_eps)
+            if is_better(noncvx_inf, opt_val, best_so_far, error):
+                best_so_far[0] = noncvx_inf
+                best_so_far[1] = opt_val
+                best_so_far[2] = {v.id:v.value for v in prob.variables()}
+            for var in noncvx_vars:
+                var.z.value = var.project(var.value + var.u.value)
+                var.u.value += var.value - var.z.value
+            # Convergence criteria.
+
+    # Unpack result.
+    for var in prob.variables():
+        var.value = best_so_far[2][var.id]
+    error = get_error(noncvx_vars, eps, rel_eps)
+    if best_so_far[0] < error:
+        return best_so_far[1]
+    else:
+        return np.inf
+
+def total_dist(noncvx_vars):
+    """Get the total distance from the noncvx_var values
+    to the nonconvex sets.
+    """
+    total = 0
+    for var in noncvx_vars:
+        total += var.dist(var.value)
+    return total
+
+def get_error(noncvx_vars, eps, rel_eps):
+    """The error bound for comparing infeasibility.
+    """
+    error = sum([cvx.norm(cvx.vec(var)) for var in noncvx_vars])
+    return eps + rel_eps*error.value
+
+def is_better(noncvx_inf, opt_val, best_so_far, error):
+    """Is the current result better than best_so_far?
+    """
+    inf_diff = best_so_far[0] - noncvx_inf
+    return (inf_diff > error) or \
+           (abs(inf_diff) <= error and opt_val < best_so_far[1])
+
 
 # Use ADMM to attempt non-convex problem.
 def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
@@ -66,14 +121,16 @@ def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
             print best_so_far
     return best_so_far
 
-def polish(prob, noncvx_vars, *args, **kwargs):
+def polish(self, *args, **kwargs):
     # Fix noncvx variables and solve.
     fix_constr = []
-    for var in noncvx_vars:
-        fix_constr += var.fix(var.z.value)
-    prob = cvx.Problem(prob.objective, prob.constraints + fix_constr)
+    for var in self.variables():
+        if getattr(var, "noncvx", False):
+            fix_constr += var.fix(var.z.value)
+    prob = cvx.Problem(self.objective, self.constraints + fix_constr)
     return prob.solve(*args, **kwargs)
 
 # Add admm method to cvx Problem.
 cvx.Problem.register_solve("admm", admm)
 cvx.Problem.register_solve("admm2", admm2)
+cvx.Problem.register_solve("polish", polish)
