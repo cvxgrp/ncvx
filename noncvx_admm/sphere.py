@@ -18,19 +18,38 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from noncvx_variable import NonCvxVariable
+from cvxpy import norm
+from cvxpy.constraints.second_order import SOC
+import cvxpy.lin_ops.lin_utils as lu
 import numpy as np
 
-class Integer(NonCvxVariable):
-    """ An integer variable. """
+class Sphere(NonCvxVariable):
+    """ A variable satisfying ||x||_2 = 1. """
+    def __init__(self, rows=1, *args, **kwargs):
+        super(Sphere, self).__init__(rows, 1, *args, **kwargs)
+
     def init_z(self, random):
         """Initializes the value of the replicant variable.
         """
-        self.z.value = np.zeros(self.size)
+        if random:
+            length = np.random.uniform()
+            direction = np.random.randn(self.size)
+            self.z.value = length*direction/norm(direction, 2).value
+        else:
+            self.z.value = np.zeros(self.size)
 
-    # All values set rounded to the nearest integer.
     def _project(self, matrix):
-        return np.around(matrix)
+        if np.all(matrix == 0):
+            result = np.ones(self.size)
+            return result/norm(result, 2).value
+        else:
+            return matrix/norm(matrix, 2).value
 
     # Constrain all entries to be the value in the matrix.
     def _fix(self, matrix):
         return [self == matrix]
+
+    def canonicalize(self):
+        obj, constr = super(Sphere, self).canonicalize()
+        one = lu.create_const(1, (1, 1))
+        return (obj, constr + [SOC(one, obj)])

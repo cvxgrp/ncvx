@@ -21,12 +21,19 @@ from noncvx_variable import NonCvxVariable
 import cvxpy.interface.matrix_utilities as intf
 from itertools import product
 
+# TODO L1 norm as convex relaxation?
+
 class Card(NonCvxVariable):
     """ A variable with constrained cardinality. """
     # k - the maximum cardinality of the variable.
     def __init__(self, rows=1, cols=1, k=None, *args, **kwargs):
         self.k = k
         super(Card, self).__init__(rows, cols, *args, **kwargs)
+
+    def init_z(self, random):
+        """Initializes the value of the replicant variable.
+        """
+        self.z.value = np.zeros(self.size)
 
     # All values except k-largest (by magnitude) set to zero.
     def _project(self, matrix):

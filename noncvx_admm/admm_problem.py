@@ -48,21 +48,41 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             var.init_z(random=random)
         # ADMM loop
         for k in range(max_iter):
-            rho_param.value = rho_val*(1.5)**k
-            prob.solve(*args, **kwargs)
-            opt_val = self.objective.value
-            noncvx_inf = total_dist(noncvx_vars)
-            # print opt_val, noncvx_inf
-            # Is the infeasibility better than best_so_far?
-            error = get_error(noncvx_vars, eps, rel_eps)
-            if is_better(noncvx_inf, opt_val, best_so_far, error):
-                best_so_far[0] = noncvx_inf
+            rho_param.value = rho_val#*(1.01)**k
+            try:
+                prob.solve(*args, **kwargs)
+            except cvx.SolverError, e:
+                pass
+            if prob.status is cvx.OPTIMAL:
+                opt_val = self.objective.value
+                noncvx_inf = total_dist(noncvx_vars)
+
+                # Is the infeasibility better than best_so_far?
+                error = get_error(noncvx_vars, eps, rel_eps)
+                if is_better(noncvx_inf, opt_val, best_so_far, error):
+                    best_so_far[0] = noncvx_inf
+                    best_so_far[1] = opt_val
+                    best_so_far[2] = {v.id:v.value for v in prob.variables()}
+                for var in noncvx_vars:
+                    var.z.value = var.project(var.value + var.u.value)
+                    var.u.value += var.value - var.z.value
+                    var.value = var.z.value
+            else:
+                break
+
+            # Convergence criteria.
+            # TODO
+
+        # Polish the best iterate.
+        for var in prob.variables():
+            var.value = best_so_far[2][var.id]
+        opt_val, status = polish(self, *args, **kwargs)
+        if status is cvx.OPTIMAL:
+           error = get_error(noncvx_vars, eps, rel_eps)
+           if is_better(0, opt_val, best_so_far, error):
+                best_so_far[0] = 0
                 best_so_far[1] = opt_val
                 best_so_far[2] = {v.id:v.value for v in prob.variables()}
-            for var in noncvx_vars:
-                var.z.value = var.project(var.value + var.u.value)
-                var.u.value += var.value - var.z.value
-            # Convergence criteria.
 
     # Unpack result.
     for var in prob.variables():
@@ -85,8 +105,8 @@ def total_dist(noncvx_vars):
 def get_error(noncvx_vars, eps, rel_eps):
     """The error bound for comparing infeasibility.
     """
-    error = sum([cvx.norm(cvx.vec(var)) for var in noncvx_vars])
-    return eps + rel_eps*error.value
+    error = sum([cvx.norm(cvx.vec(var)) for var in noncvx_vars]).value
+    return eps + rel_eps*error
 
 def is_better(noncvx_inf, opt_val, best_so_far, error):
     """Is the current result better than best_so_far?
@@ -121,16 +141,16 @@ def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
             print best_so_far
     return best_so_far
 
-def polish(self, *args, **kwargs):
+def polish(prob, *args, **kwargs):
     # Fix noncvx variables and solve.
     fix_constr = []
-    for var in self.variables():
+    for var in prob.variables():
         if getattr(var, "noncvx", False):
             fix_constr += var.fix(var.z.value)
-    prob = cvx.Problem(self.objective, self.constraints + fix_constr)
-    return prob.solve(*args, **kwargs)
+    prob = cvx.Problem(prob.objective, prob.constraints + fix_constr)
+    prob.solve(*args, **kwargs)
+    return prob.value, prob.status
 
 # Add admm method to cvx Problem.
 cvx.Problem.register_solve("admm", admm)
 cvx.Problem.register_solve("admm2", admm2)
-cvx.Problem.register_solve("polish", polish)

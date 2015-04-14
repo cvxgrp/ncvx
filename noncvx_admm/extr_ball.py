@@ -18,18 +18,26 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from noncvx_variable import NonCvxVariable
+from cvxpy import norm
 import numpy as np
 
-class Integer(NonCvxVariable):
-    """ An integer variable. """
+class ExtrBall(NonCvxVariable):
+    """ A variable satisfying ||x||_2 >= 1. """
+    def __init__(self, rows=1, *args, **kwargs):
+        super(ExtrBall, self).__init__(rows, 1, *args, **kwargs)
+
     def init_z(self, random):
         """Initializes the value of the replicant variable.
         """
         self.z.value = np.zeros(self.size)
 
-    # All values set rounded to the nearest integer.
+    # All values except k-largest (by magnitude) set to zero.
     def _project(self, matrix):
-        return np.around(matrix)
+        length = norm(matrix, 2).value
+        if length < 1:
+            return matrix/length
+        else:
+            return matrix.copy()
 
     # Constrain all entries to be the value in the matrix.
     def _fix(self, matrix):

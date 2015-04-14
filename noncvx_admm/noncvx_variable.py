@@ -20,7 +20,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 import abc
 import cvxpy
 import cvxpy.interface as intf
-import cvxopt
+import numpy as np
 
 class NonCvxVariable(cvxpy.Variable):
     __metaclass__ = abc.ABCMeta
@@ -29,11 +29,13 @@ class NonCvxVariable(cvxpy.Variable):
         self.noncvx = True
         self.z = cvxpy.Parameter(*self.size)
         self.u = cvxpy.Parameter(*self.size)
-        self.u.value = cvxopt.matrix(0, self.size, tc='d')
+        self.u.value = np.zeros(self.size)
 
-    # Initializes the value of the replicant variable.
+    @abc.abstractmethod
     def init_z(self, random):
-        self.z.value = cvxopt.matrix(0, self.size, tc='d')
+        """Initializes the value of the replicant variable.
+        """
+        return NotImplemented
 
     # Verify that the matrix has the same dimensions as the variable.
     def validate_matrix(self, matrix):

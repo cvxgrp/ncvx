@@ -5,7 +5,7 @@ import numpy as np
 # Chips are assigned to slots in a 1D array.
 # Some chips are connected by wires.
 # The goal is to minimize the total wiring distance.
-n = 25
+n = 10
 num_slots = n
 num_items = n
 num_connections = n-1
@@ -32,10 +32,10 @@ for chip1, chip2 in connections:
     cost += abs(positions[chip1] - positions[chip2])
 prob = Problem(Minimize(cost))
 result = prob.solve(method="admm", max_iter=10,
-                    restarts=n, random=False)
+                    restarts=n*n, random=True)
 print result
 # print prob.solve(method="polish")
-print positions.value
+print np.around(positions.value)
 
 for k in range(10):
     assignment.value = np.zeros(assignment.size)
