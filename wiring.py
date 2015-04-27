@@ -31,8 +31,8 @@ cost = 0
 for chip1, chip2 in connections:
     cost += abs(positions[chip1] - positions[chip2])
 prob = Problem(Minimize(cost))
-result = prob.solve(method="admm", max_iter=10,
-                    restarts=n*n, random=True)
+result = prob.solve(method="consensus", max_iter=100,
+                    restarts=1, random=False, rho=[10])
 print result
 # print prob.solve(method="polish")
 print np.around(positions.value)

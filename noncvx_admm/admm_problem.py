@@ -65,7 +65,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                     best_so_far[2] = {v.id:v.value for v in prob.variables()}
                 for var in noncvx_vars:
                     var.z.value = var.project(var.value + var.u.value)
-                    var.u.value += var.value - var.z.value
+                    var.u.value += rho_val*(var.value - var.z.value)
                     var.value = var.z.value
             else:
                 break
@@ -83,6 +83,85 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                 best_so_far[0] = 0
                 best_so_far[1] = opt_val
                 best_so_far[2] = {v.id:v.value for v in prob.variables()}
+
+    # Unpack result.
+    for var in prob.variables():
+        var.value = best_so_far[2][var.id]
+    error = get_error(noncvx_vars, eps, rel_eps)
+    if best_so_far[0] < error:
+        return best_so_far[1]
+    else:
+        return np.inf
+
+def admm_consensus(self, rho=None, max_iter=5, restarts=1,
+                   random=False, eps=1e-4, rel_eps=1e-4,
+                   *args, **kwargs):
+    # rho is a list of values, one for each restart.
+    if rho is None:
+        rho = [np.random.uniform() for i in range(restarts)]
+    else:
+        assert len(rho) == restarts
+    # Setup the problem.
+    noncvx_vars = []
+    for var in self.variables():
+        if isinstance(var, NonCvxVariable):
+            var.zbar = cvx.Parameter(*var.size)
+            var.zbar.value = np.zeros(var.size)
+            var.u_nc = cvx.Parameter(*var.size)
+            var.u_nc.value = np.zeros(var.size)
+            noncvx_vars += [var]
+    # Form ADMM problem.
+    rho_param = cvx.Parameter(sign="positive")
+    obj = self.objective._expr
+    for var in noncvx_vars:
+        obj += (rho_param/2)*cvx.sum_squares(var - var.zbar + var.u)
+    prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
+    # Algorithm.
+    best_so_far = [np.inf, np.inf, {}]
+    for rho_val in rho:
+        for var in noncvx_vars:
+            var.init_z(random=random)
+        # ADMM loop
+        for k in range(max_iter):
+            rho_param.value = rho_val#*(1.01)**k
+            try:
+                prob.solve(*args, **kwargs)
+            except cvx.SolverError, e:
+                pass
+            if prob.status is cvx.OPTIMAL:
+                for var in noncvx_vars:
+                    var.z.value = var.project(var.zbar.value - var.u_nc.value)
+                    var.zbar.value = 0.5*(var.value + var.z.value)
+                    var.u.value += rho_val*(var.value - var.zbar.value)
+                    var.u_nc.value += rho_val*(var.z.value - var.zbar.value)
+
+                opt_val = self.objective.value
+                print opt_val
+                print prob.value
+                noncvx_inf = total_dist(noncvx_vars)
+
+                # Is the infeasibility better than best_so_far?
+                error = get_error(noncvx_vars, eps, rel_eps)
+                if is_better(noncvx_inf, opt_val, best_so_far, error):
+                    best_so_far[0] = noncvx_inf
+                    best_so_far[1] = opt_val
+                    best_so_far[2] = {v.id:v.value for v in prob.variables()}
+            else:
+                break
+
+            # Convergence criteria.
+            # TODO
+
+        # # Polish the best iterate.
+        # for var in prob.variables():
+        #     var.value = best_so_far[2][var.id]
+        # opt_val, status = polish(self, *args, **kwargs)
+        # if status is cvx.OPTIMAL:
+        #    error = get_error(noncvx_vars, eps, rel_eps)
+        #    if is_better(0, opt_val, best_so_far, error):
+        #         best_so_far[0] = 0
+        #         best_so_far[1] = opt_val
+        #         best_so_far[2] = {v.id:v.value for v in prob.variables()}
 
     # Unpack result.
     for var in prob.variables():
@@ -154,3 +233,4 @@ def polish(prob, *args, **kwargs):
 # Add admm method to cvx Problem.
 cvx.Problem.register_solve("admm", admm)
 cvx.Problem.register_solve("admm2", admm2)
+cvx.Problem.register_solve("consensus", admm_consensus)
