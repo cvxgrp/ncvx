@@ -1,6 +1,7 @@
 from cvxpy import *
-from ncvx.boolean import Boolean
-import ncvx.branch_and_bound
+# from ncvx.boolean import Boolean
+from noncvx_admm import *
+# import ncvx.branch_and_bound
 import cvxopt
 import cProfile, pstats
 import numpy as np
@@ -54,8 +55,8 @@ def block(x,b):
             if i // 3 == b // 3 and j // 3 == b % 3:
                 yield x[i,j]
 
-pr = cProfile.Profile()
-pr.enable()
+# pr = cProfile.Profile()
+# pr.enable()
 # create the suboku constraints
 constraints = [sum(numbers) == 1]
 for i in range(n):
@@ -68,11 +69,11 @@ constraints.extend(numbers[solution[k]][k] == 1 for k in known)
 # attempt to solve
 
 p = Problem(Minimize(sum(map(square, [num[0,0] for num in numbers]))), constraints)
-p.solve(method="branch and bound")
-pr.disable()
+p.solve(method="relax_and_round")
+# pr.disable()
 
-ps = pstats.Stats(pr)
-ps.sort_stats('tottime').print_stats(.5)
+# ps = pstats.Stats(pr)
+# ps.sort_stats('tottime').print_stats(.5)
 
 A = np.zeros((n, n))
 for i, num in enumerate(numbers):

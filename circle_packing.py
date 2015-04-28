@@ -28,23 +28,20 @@ Tau = Tau_init
 r_c = np.random.uniform(1)
 p_c = l*np.random.uniform(size=(2,N))
 
-objective = cp.Minimize(-r)
-constraints = [0 <= r, 2*r <= l]
+objective = cp.Minimize(cp.max_elemwise( *(x_vals + y_vals) ))
+constraints = []
 for i in xrange(N):
-    constraints  += [r <= x_vals[i],
-                     r <= y_vals[i],
-                     x_vals[i] <= l-r,
-                     y_vals[i] <= l-r]
+    constraints  += [0 <= x_vals[i],
+                     0 <= y_vals[i]]
 soc_bound_vars = []
 for i in xrange(N-1):
     for j in xrange(i+1,N):
         t = cp.Variable()
-        soc_bound_vars.append(ncvx.SOCBound(3))
+        soc_bound_vars.append(ncvx.ExtrBall(2))
         constraints += [
             cp.vstack(x_vals[i] - x_vals[j],
-                      y_vals[i] - y_vals[j],
-                      t) == soc_bound_vars[-1],
-            t >= 2*r]
+                      y_vals[i] - y_vals[j]) == soc_bound_vars[-1],
+            ]
 prob = cp.Problem(objective, constraints)
 
 # Initialize args.
@@ -57,8 +54,8 @@ prob = cp.Problem(objective, constraints)
 #     y_vals[i].value = 5*i#p_c[1,i]
 
 # for iteration in xrange(max_iter):
-result = prob.solve(method="admm", max_iters=50,
-                    restarts=25, random=True)
+result = prob.solve(method="consensus", max_iters=100,
+                    restarts=1, random=True, rho=[1])
 print result
 for var in soc_bound_vars:
     print var.value

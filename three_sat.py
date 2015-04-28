@@ -1,14 +1,17 @@
 from cvxpy import *
 from noncvx_admm import *
 import random
+import numpy as np
 
 # 3-SAT problem solved with non-convex ADMM
 # TODO initialize z's at 0.5
 EPSILON = 1e-8
+random.seed(1)
+np.random.seed(1)
 
 # Randomly generate a feasible 3-SAT problem.
 VARIABLES = 250
-CLAUSES_PER_VARIABLE = 3
+CLAUSES_PER_VARIABLE = 4
 
 # The 3-SAT solution.
 solution = [random.random() < 0.5 for i in range(VARIABLES)]
@@ -33,25 +36,31 @@ print "Generated %d clauses." % len(clauses)
 vars = [Boolean() for i in range(VARIABLES)]
 
 # The 3-SAT constraints.
+cost = 0
 constraints = []
 for clause_vars, negated in clauses:
     terms = []
-    for index,negation in zip(clause_vars,negated):
+    for index, negation in zip(clause_vars,negated):
         if negation:
             terms.append( (1-vars[index]) )
         else:
             terms.append(vars[index])
     constraints.append(sum(terms) >= 1)
+    # cost += neg(sum(terms) - 1)
+cost = sum([np.random.random()*v for v in vars])
 
 best_values = VARIABLES*[0]
 best_match = 0
 best_rho = 0
 for i in range(1):
-    p = Problem(Minimize(0), constraints)
+    p = Problem(Minimize(cost), constraints)
     rho = random.random()
-    result = p.solve(method="admm",
-                     max_iter=10, restarts=10,
-                     random=False)
+    print p.solve(method="consensus",
+                  max_iter=50, restarts=1,
+                  random=False, polish_best=False,
+                  rho=[10])#, tau=1.1, tau_max=10)
+    # print p.solve(method="repeated_rr", max_iter=25, delta=1.05, tau_init=1)
+    # print p.solve(method="relax_and_round")
 
     # Store the result.
     values = [vars[i].value for i in range(VARIABLES)]

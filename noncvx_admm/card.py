@@ -20,6 +20,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 from noncvx_variable import NonCvxVariable
 import cvxpy.interface.matrix_utilities as intf
 from itertools import product
+import numpy as np
 
 # TODO L1 norm as convex relaxation?
 

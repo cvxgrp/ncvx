@@ -28,7 +28,9 @@ slack = [pos(1 - label*(sample.T*a - b)) for (label, sample) in data]
 objective = Minimize(norm(a, 2) + gamma*sum(slack))
 p = Problem(objective)
 # Extensions can attach new solve methods to the CVXPY Problem class.
-p.solve(method="admm")
+# p.solve(method="consensus", max_iter=25, rho=[5])
+p.solve(method="repeated_rr")
+# p.solve(method="relax_and_round")
 
 # Count misclassifications.
 error = 0
