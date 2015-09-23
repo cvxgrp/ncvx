@@ -30,6 +30,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
         rho = [np.random.uniform() for i in range(restarts)]
     else:
         assert len(rho) == restarts
+
     # Setup the problem.
     noncvx_vars = []
     for var in self.variables():
@@ -37,10 +38,15 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             noncvx_vars += [var]
     # Form ADMM problem.
     rho_param = cvx.Parameter(sign="positive")
-    obj = self.objective._expr
+    obj = self.objective.args[0]
+    # Flip sign for concave functions.
+    if isinstance(self.objective, cvx.Maximize):
+        obj *= -1
+
     for var in noncvx_vars:
-        obj = obj + (rho_param/2)*cvx.sum_squares(var - var.z + var.u)
+        obj += (rho_param/2)*cvx.sum_squares(var - var.z + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
+
     # Algorithm.
     best_so_far = [np.inf, np.inf, {}]
     for rho_val in rho:
@@ -68,6 +74,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                     var.u.value += var.value - var.z.value
                     var.value = var.z.value
             else:
+                print prob.status
                 break
 
             # Convergence criteria.
@@ -118,7 +125,7 @@ def admm_consensus(self, rho=None, max_iter=5, restarts=1,
             noncvx_vars += [var]
     # Form ADMM problem.
     rho_param = cvx.Parameter(sign="positive")
-    obj = self.objective._expr
+    obj = self.objective.args[0]
     for var in noncvx_vars:
         obj += (rho_param/2)*cvx.sum_squares(var - var.zbar + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
@@ -269,7 +276,7 @@ def repeated_rr(self, tau_init=1, tau_max=250, delta=1.1, max_iter=10,
     # Form ADMM problem.
     tau_param = cvx.Parameter(sign="positive")
     tau_param.value = 0
-    obj = self.objective._expr
+    obj = self.objective.args[0]
     for var in noncvx_vars:
         obj = obj + (tau_param)*cvx.norm(var - var.z, 1)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
@@ -338,7 +345,7 @@ def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
             var.init_z(random=random)
             noncvx_vars += [var]
     # Form ADMM problem.
-    obj = self.objective._expr
+    obj = self.objective.args[0]
     for var in noncvx_vars:
         obj = obj + (rho/2)*cvx.sum_squares(var - var.z + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)

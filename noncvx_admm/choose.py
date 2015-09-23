@@ -21,6 +21,7 @@ from boolean import Boolean
 import cvxopt
 import numpy as np
 from itertools import product
+import cvxpy.lin_ops.lin_utils as lu
 
 class Choose(Boolean):
     """ A variable with k 1's and all other entries 0. """
@@ -32,7 +33,7 @@ class Choose(Boolean):
         """Initialize cloned variable.
         """
         super(Choose, self).init_z(random)
-        self.z.value = k*self.z.value/self.z.value.sum()
+        self.z.value = self.k*self.z.value/self.z.value.sum()
 
     # The k-largest values are set to 1. The remainder are set to 0.
     def _project(self, matrix):
@@ -44,3 +45,11 @@ class Choose(Boolean):
         for ind in v_ind[self.k:]:
             result[ind] = 0
         return result
+
+    # In the relaxation, we have 0 <= var <= 1.
+    def canonicalize(self):
+        obj, constraints = super(Choose, self).canonicalize()
+        k_const = lu.create_const(self.k, (1, 1))
+        constraints += [lu.create_eq(lu.sum_entries(obj), k_const)]
+        return (obj, constraints)
+
