@@ -22,6 +22,28 @@ import cvxpy as cvx
 import numpy as np
 
 # Use ADMM to attempt non-convex problem.
+def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
+    noncvx_vars = []
+    for var in self.variables():
+        if getattr(var, "noncvx", False):
+            noncvx_vars += [var]
+            var.init_z(random=random)
+    # Form ADMM problem.
+    obj = self.objective.args[0]
+    for var in noncvx_vars:
+        obj += (rho/2)*cvx.sum_entries(cvx.square(var - var.z + var.u))
+    prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
+    # ADMM loop
+    for i in range(iterations):
+        result = prob.solve(*args, **kwargs)
+        print "relaxation", result
+        for idx, var in enumerate(noncvx_vars):
+            var.z.value = var.project(var.value + var.u.value)
+            print idx, var.z.value, var.value, var.u.value
+            var.u.value += var.value - var.z.value
+    return polish(self, *args, **kwargs)
+
+# Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=5, restarts=1,
          random=False, eps=1e-4, rel_eps=1e-4,
          *args, **kwargs):
@@ -30,6 +52,10 @@ def admm(self, rho=None, max_iter=5, restarts=1,
         rho = [np.random.uniform() for i in range(restarts)]
     else:
         assert len(rho) == restarts
+
+    # Solve the relaxation.
+    rel_val = self.solve(*args, **kwargs)
+    print "lower bound", rel_val
 
     # Setup the problem.
     noncvx_vars = []
@@ -48,10 +74,11 @@ def admm(self, rho=None, max_iter=5, restarts=1,
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
 
     # Algorithm.
-    best_so_far = [np.inf, np.inf, {}]
+    best_so_far = [np.inf, {}]
     for rho_val in rho:
         for var in noncvx_vars:
             var.init_z(random=random)
+            # var.z.value = var.value
         # ADMM loop
         for k in range(max_iter):
             rho_param.value = rho_val#*(1.01)**k
@@ -60,19 +87,36 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             except cvx.SolverError, e:
                 pass
             if prob.status is cvx.OPTIMAL:
-                opt_val = self.objective.value
-                noncvx_inf = total_dist(noncvx_vars)
 
-                # Is the infeasibility better than best_so_far?
-                error = get_error(noncvx_vars, eps, rel_eps)
-                if is_better(noncvx_inf, opt_val, best_so_far, error):
-                    best_so_far[0] = noncvx_inf
-                    best_so_far[1] = opt_val
-                    best_so_far[2] = {v.id:v.value for v in prob.variables()}
                 for var in noncvx_vars:
-                    var.z.value = var.project(var.value + var.u.value)
+                    var.z.value = var.project(var.value + var.u.value)# + \
+                        # np.random.normal(scale=10.0/(1+k), size=var.size))
                     var.u.value += var.value - var.z.value
-                    var.value = var.z.value
+
+                old_vars = {var.id:var.value for var in self.variables()}
+                # Try to polish.
+                polish_opt_val, status = polish(self, *args, **kwargs)
+                print "polish_opt_val", polish_opt_val
+                if status == cvx.INFEASIBLE:
+                    # Undo change in var.value.
+                    for var in self.variables():
+                        if isinstance(var, NonCvxVariable):
+                            var.value = var.z.value
+                        else:
+                            var.value = old_vars[var.id]
+
+                merit = self.objective.value
+                print "objective func", merit
+                for constr in self.constraints:
+                    merit += cvx.sum_entries(constr.violation).value
+                if merit <= best_so_far[0]:
+                    best_so_far[0] = merit
+                    best_so_far[1] = {v.id:v.value for v in prob.variables()}
+
+                # # Restore variable values.
+                # for var in noncvx_vars:
+                #     var.value = var.z.value
+
             else:
                 print prob.status
                 break
@@ -80,25 +124,10 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             # Convergence criteria.
             # TODO
 
-        # Polish the best iterate.
-        for var in prob.variables():
-            var.value = best_so_far[2][var.id]
-        opt_val, status = polish(self, *args, **kwargs)
-        if status is cvx.OPTIMAL:
-           error = get_error(noncvx_vars, eps, rel_eps)
-           if is_better(0, opt_val, best_so_far, error):
-                best_so_far[0] = 0
-                best_so_far[1] = opt_val
-                best_so_far[2] = {v.id:v.value for v in prob.variables()}
-
     # Unpack result.
     for var in prob.variables():
-        var.value = best_so_far[2][var.id]
-    error = get_error(noncvx_vars, eps, rel_eps)
-    if best_so_far[0] < error:
-        return best_so_far[1]
-    else:
-        return np.inf
+        var.value = best_so_far[1][var.id]
+    return best_so_far[0]
 
 def admm_consensus(self, rho=None, max_iter=5, restarts=1,
                    random=False, eps=1e-4, rel_eps=1e-4,
@@ -370,12 +399,13 @@ def polish(prob, *args, **kwargs):
     # Fix noncvx variables and solve.
     fix_constr = []
     for var in get_noncvx_vars(prob):
-            fix_constr += var.fix(var.z.value)
+        fix_constr += var.fix(var.z.value)
     prob = cvx.Problem(prob.objective, prob.constraints + fix_constr)
     prob.solve(*args, **kwargs)
     return prob.value, prob.status
 
 # Add admm method to cvx Problem.
+cvx.Problem.register_solve("admm_basic", admm_basic)
 cvx.Problem.register_solve("admm", admm)
 cvx.Problem.register_solve("admm2", admm2)
 cvx.Problem.register_solve("consensus", admm_consensus)

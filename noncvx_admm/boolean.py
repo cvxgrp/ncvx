@@ -32,7 +32,7 @@ class Boolean(NonCvxVariable):
 
     # All values set rounded to zero or 1.
     def _project(self, matrix):
-        return np.around(matrix)
+        return np.around(matrix) #> 0
 
     # Constrain all entries to be the value in the matrix.
     def _fix(self, matrix):
