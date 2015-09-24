@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __future__ import division
 from noncvx_variable import NonCvxVariable
 import cvxpy as cvx
 import numpy as np
@@ -45,7 +46,7 @@ def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
 
 # Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=5, restarts=1,
-         random=False, eps=1e-4, rel_eps=1e-4,
+         random=False, sigma=10.0, polish=True,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -86,18 +87,20 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                 prob.solve(*args, **kwargs)
             except cvx.SolverError, e:
                 pass
-            if prob.status is cvx.OPTIMAL:
-
+            if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+                print rho_val, k, best_so_far[0]
                 for var in noncvx_vars:
-                    var.z.value = var.project(var.value + var.u.value)# + \
-                        # np.random.normal(scale=10.0/(1+k), size=var.size))
+                    # var.z.value = var.project(var.value + var.u.value)
+                    var.z.value = var.project(var.value + var.u.value + \
+                        np.random.normal(scale=sigma/np.sqrt(k+1), size=var.size))
                     var.u.value += var.value - var.z.value
 
                 old_vars = {var.id:var.value for var in self.variables()}
-                # Try to polish.
-                polish_opt_val, status = polish(self, *args, **kwargs)
-                print "polish_opt_val", polish_opt_val
-                if status == cvx.INFEASIBLE:
+                if polish:
+                    # Try to polish.
+                    polish_opt_val, status = polish(self, *args, **kwargs)
+                # print "polish_opt_val", polish_opt_val
+                if not polish or status == cvx.INFEASIBLE:
                     # Undo change in var.value.
                     for var in self.variables():
                         if isinstance(var, NonCvxVariable):
