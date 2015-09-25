@@ -76,9 +76,12 @@ def admm(self, rho=None, max_iter=5, restarts=1,
 
     # Algorithm.
     best_so_far = [np.inf, {}]
-    for rho_val in rho:
+    for outer_iter, rho_val in enumerate(rho):
         for var in noncvx_vars:
-            var.init_z(random=random)
+            # if outer_iter == 0:
+                var.init_z(random=random)
+            # else:
+            #     var.value = best_so_far[1][var.id]
             # var.z.value = var.value
         # ADMM loop
         for k in range(max_iter):
@@ -88,11 +91,11 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             except cvx.SolverError, e:
                 pass
             if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-                print rho_val, k, best_so_far[0]
+                # print rho_val, k, best_so_far[0]
                 for var in noncvx_vars:
                     # var.z.value = var.project(var.value + var.u.value)
                     var.z.value = var.project(var.value + var.u.value + \
-                        np.random.normal(scale=sigma/np.sqrt(k+1), size=var.size))
+                        np.random.normal(scale=sigma/(k+1), size=var.size))
                     var.u.value += var.value - var.z.value
 
                 old_vars = {var.id:var.value for var in self.variables()}
@@ -109,9 +112,9 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                             var.value = old_vars[var.id]
 
                 merit = self.objective.value
-                print "objective func", merit
+                # print "objective func", merit
                 for constr in self.constraints:
-                    merit += cvx.sum_entries(constr.violation).value
+                    merit += 1e6*cvx.sum_entries(constr.violation).value
                 if merit <= best_so_far[0]:
                     best_so_far[0] = merit
                     best_so_far[1] = {v.id:v.value for v in prob.variables()}
