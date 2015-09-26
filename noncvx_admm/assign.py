@@ -23,7 +23,10 @@ from munkres import Munkres
 import numpy as np
 
 class Assign(Boolean):
-    """ An assignment matrix. """
+    """ An assignment matrix.
+
+        Assign jobs x workers. Assign one worker to each job.
+    """
     def __init__(self, rows, cols, *args, **kwargs):
         assert rows >= cols
         super(Assign, self).__init__(rows=rows, cols=cols, *args, **kwargs)
@@ -48,13 +51,16 @@ class Assign(Boolean):
 
     # Compute projection with maximal weighted matching.
     def _project(self, matrix):
-        m = Munkres()
-        lists = self.matrix_to_lists(-matrix)
-        indexes = m.compute(lists)
-        result = np.zeros(self.size)
-        for row, column in indexes:
-            result[row, column] = 1
-        return result
+        if self.is_scalar():
+            return 1
+        else:
+            m = Munkres()
+            lists = self.matrix_to_lists(-matrix)
+            indexes = m.compute(lists)
+            result = np.zeros(self.size)
+            for row, column in indexes:
+                result[row, column] = 1
+            return result
 
     def matrix_to_lists(self, matrix):
         """Convert a matrix to a list of lists.
