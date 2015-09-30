@@ -37,6 +37,11 @@ class NonCvxVariable(cvxpy.Variable):
         """
         return NotImplemented
 
+    def init_u(self, random=False):
+        """Initializes the value of the dual variable.
+        """
+        self.u.value = np.zeros(self.size)
+
     # Verify that the matrix has the same dimensions as the variable.
     def validate_matrix(self, matrix):
         if self.size != intf.size(matrix):

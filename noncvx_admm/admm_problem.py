@@ -46,7 +46,7 @@ def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
 
 # Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=5, restarts=1,
-         random=False, sigma=10.0, polish_best=True,
+         random=False, sigma=0.01, polish_best=True,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -56,7 +56,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
 
     # Solve the relaxation.
     rel_val = self.solve(*args, **kwargs)
-    print "lower bound", rel_val
+    # print "lower bound", rel_val
 
     # Setup the problem.
     noncvx_vars = []
@@ -80,6 +80,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
         for var in noncvx_vars:
             # if outer_iter == 0:
                 var.init_z(random=random)
+                var.init_u()
             # else:
             #     var.value = best_so_far[1][var.id]
             # var.z.value = var.value
@@ -94,8 +95,8 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                 # print rho_val, k, best_so_far[0]
                 for var in noncvx_vars:
                     var.z.value = var.project(var.value + var.u.value)
-                    var.z.value = var.project(var.value + var.u.value + \
-                        np.random.normal(scale=sigma/(k+1), size=var.size))
+                    # var.z.value = var.project(var.value + var.u.value + \
+                    #     np.random.normal(scale=sigma, size=var.size))
                     var.u.value += var.value - var.z.value
 
                 old_vars = {var.id:var.value for var in self.variables()}
