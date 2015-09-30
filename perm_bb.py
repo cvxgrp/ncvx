@@ -87,10 +87,13 @@ counter = 0
 evaluated = 0
 # Priority queue.
 nodes = PriorityQueue()
-nodes.put((np.inf, counter, []))
+nodes.put((-np.inf, counter, []))
 while not nodes.empty():
     # Evaluate the node with the lowest lower bound.
-    _, _, choices = nodes.get()
+    parent_lower_bound, _, choices = nodes.get()
+    # Short circuit if lower bound above upper bound.
+    if parent_lower_bound + EPS_SOL >= best_solution:
+        continue
     prob, perm = get_prob(X, w, choices)
     lower_bound = prob.solve()
     evaluated += 1
@@ -101,12 +104,13 @@ while not nodes.empty():
         print best_solution, lower_bound
         best_perm = perm.value
     # Add new nodes if not a leaf and the branch cannot be pruned.
+    # TODO remove pruning here?
     if len(choices) < n and \
        lower_bound + EPS_SOL < best_solution:
         for i in range(n):
             if i not in choices:
                 counter += 1
-                k = len(choices)
+                # k = len(choices)
                 # nodes.put((lower_bound, -perm[k,i].value, choices + [i]))
                 nodes.put((lower_bound, np.random.random(), choices + [i]))
 

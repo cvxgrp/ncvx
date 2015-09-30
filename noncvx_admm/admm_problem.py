@@ -28,7 +28,7 @@ def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
     for var in self.variables():
         if getattr(var, "noncvx", False):
             noncvx_vars += [var]
-            var.init_z(random=random)
+            var.init_z(random=False)
     # Form ADMM problem.
     obj = self.objective.args[0]
     for var in noncvx_vars:
@@ -40,13 +40,13 @@ def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
         print "relaxation", result
         for idx, var in enumerate(noncvx_vars):
             var.z.value = var.project(var.value + var.u.value)
-            print idx, var.z.value, var.value, var.u.value
+            # print idx, var.z.value, var.value, var.u.value
             var.u.value += var.value - var.z.value
     return polish(self, *args, **kwargs)
 
 # Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=5, restarts=1,
-         random=False, sigma=10.0, polish=True,
+         random=False, sigma=10.0, polish_best=True,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -93,17 +93,17 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
                 # print rho_val, k, best_so_far[0]
                 for var in noncvx_vars:
-                    # var.z.value = var.project(var.value + var.u.value)
-                    var.z.value = var.project(var.value + var.u.value + \
-                        np.random.normal(scale=sigma/(k+1), size=var.size))
+                    var.z.value = var.project(var.value + var.u.value)
+                    # var.z.value = var.project(var.value + var.u.value + \
+                    #     np.random.normal(scale=sigma/(k+1), size=var.size))
                     var.u.value += var.value - var.z.value
 
                 old_vars = {var.id:var.value for var in self.variables()}
-                if polish:
+                if polish_best:
                     # Try to polish.
                     polish_opt_val, status = polish(self, *args, **kwargs)
                 # print "polish_opt_val", polish_opt_val
-                if not polish or status == cvx.INFEASIBLE:
+                if not polish_best or status == cvx.INFEASIBLE:
                     # Undo change in var.value.
                     for var in self.variables():
                         if isinstance(var, NonCvxVariable):
@@ -112,9 +112,9 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                             var.value = old_vars[var.id]
 
                 merit = self.objective.value
-                # print "objective func", merit
                 for constr in self.constraints:
                     merit += 1e6*cvx.sum_entries(constr.violation).value
+                print "objective func", merit
                 if merit <= best_so_far[0]:
                     best_so_far[0] = merit
                     best_so_far[1] = {v.id:v.value for v in prob.variables()}

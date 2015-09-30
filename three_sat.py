@@ -10,7 +10,7 @@ np.random.seed(1)
 EPSILON = 1e-8
 
 # Randomly generate a feasible 3-SAT problem.
-VARIABLES = 250
+VARIABLES = 100
 CLAUSES_PER_VARIABLE = 3
 
 # The 3-SAT solution.
@@ -21,14 +21,15 @@ clauses = []
 for i in range(VARIABLES*CLAUSES_PER_VARIABLE):
     clause_vars = random.sample(range(VARIABLES), 3)
     # Which variables are negated in the clause?
-    while True:
-        negated = [random.random() < 0.5 for j in range(3)]
-        # Must be consistent with the solution.
-        result = False
-        for index, negation in zip(clause_vars,negated):
-            result |= negation ^ solution[index]
-        if result:
-            break
+    negated = [random.random() < 0.5 for j in range(3)]
+    # while True:
+    #     negated = [random.random() < 0.5 for j in range(3)]
+    #     # Must be consistent with the solution.
+    #     result = False
+    #     for index, negation in zip(clause_vars,negated):
+    #         result |= negation ^ solution[index]
+    #     if result:
+    #         break
     clauses.append( (clause_vars, negated) )
 print "Generated %d clauses." % len(clauses)
 
@@ -56,8 +57,10 @@ for i in range(10):
     p = Problem(Minimize(0), constraints)
     rho = random.random()
     print rho
-    result = p.solve(method="admm_basic", rho=rho,
-                     iterations=2, solver=ECOS)
+    # result = p.solve(method="admm_basic", rho=rho,
+    #                  iterations=2, solver=ECOS)
+    result = p.solve(method="admm", rho=[rho], restarts=1,
+                     max_iter=50, solver=ECOS, random=True)
     print result
     # print p.solve(method="repeated_rr", max_iter=25, delta=1.05, tau_init=1)
     # print p.solve(method="relax_and_round")
@@ -81,6 +84,8 @@ for i in range(10):
         best_match = sum(satisfied)
         best_rho = rho
     if best_match == len(clauses): break
+
+    print best_match, len(clauses)
 
 percent_satisfied = 100*best_match/len(clauses)
 print "%s%% of the clauses were satisfied." % percent_satisfied

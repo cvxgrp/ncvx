@@ -54,8 +54,8 @@ class Chord(object):
 np.random.seed(1)
 x = Variable(2)
 w = np.random.randn(2)
-cost = (x[0]-0.1)**2 + 3*x[1]**2
-constraints = [2*x[0] + x[1] <= 0]
+cost = norm(x,'inf')
+constraints = [abs(x[0]) <= 0.5]
 
 EPS_THETA = 1e-3
 EPS_SOL = 1e-3
@@ -68,11 +68,13 @@ counter = 0
 evaluated = 0
 # Priority queue.
 nodes = PriorityQueue()
-nodes.put((np.inf, counter, Chord(x/RADIUS, 0, 2*np.pi, RADIUS)))
+nodes.put((-np.inf, counter, Chord(x/RADIUS, 0, 2*np.pi, RADIUS)))
 while not nodes.empty():
     # Evaluate the node with the lowest lower bound.
-    _, _, chord = nodes.get()
-    print chord.small_theta, chord.big_theta
+    parent_lower_bound, _, chord = nodes.get()
+    # Short circuit if lower bound above upper bound.
+    if parent_lower_bound + EPS_SOL >= best_solution:
+        continue
     prob = Problem(Minimize(cost), constraints + chord.hull())
     lower_bound = prob.solve()
     evaluated += 1
@@ -88,11 +90,12 @@ while not nodes.empty():
     if upper_bound <= best_solution:
         best_x = x.value
     # Add new nodes if not a leaf and the branch cannot be pruned.
+    # TODO remove pruning here?
     if chord.big_theta - chord.small_theta > EPS_THETA and \
        lower_bound + EPS_SOL < best_solution:
         for sub_chord in chord.split():
             counter += 1
-            nodes.put((-lower_bound, counter, sub_chord))
+            nodes.put((lower_bound, counter, sub_chord))
 
 sections = 2*np.pi*RADIUS/EPS_THETA
 print "Evaluated: %d out of %d, or %.3f%%" % (evaluated,
