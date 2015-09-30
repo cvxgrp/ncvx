@@ -94,8 +94,8 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                 # print rho_val, k, best_so_far[0]
                 for var in noncvx_vars:
                     var.z.value = var.project(var.value + var.u.value)
-                    # var.z.value = var.project(var.value + var.u.value + \
-                    #     np.random.normal(scale=sigma/(k+1), size=var.size))
+                    var.z.value = var.project(var.value + var.u.value + \
+                        np.random.normal(scale=sigma/(k+1), size=var.size))
                     var.u.value += var.value - var.z.value
 
                 old_vars = {var.id:var.value for var in self.variables()}
@@ -114,7 +114,6 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                 merit = self.objective.value
                 for constr in self.constraints:
                     merit += 1e6*cvx.sum_entries(constr.violation).value
-                print "objective func", merit
                 if merit <= best_so_far[0]:
                     best_so_far[0] = merit
                     best_so_far[1] = {v.id:v.value for v in prob.variables()}
