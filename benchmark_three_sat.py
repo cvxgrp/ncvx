@@ -49,7 +49,8 @@ for idx_1, num_vars in enumerate(num_vars_list):
                 prob = Problem(Minimize(0), [A*x <= b])
                 RESTARTS = 10
                 result = prob.solve(method="admm", restarts=RESTARTS,
-                                    rho=np.random.uniform(size=RESTARTS),
+                                    # rho=np.random.uniform(size=RESTARTS),
+                                    rho=RESTARTS*[10],
                                     max_iter=100, solver=ECOS, random=True,
                                     polish_best=False)
 

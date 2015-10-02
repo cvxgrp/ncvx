@@ -19,6 +19,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 from noncvx_variable import NonCvxVariable
+from boolean import Boolean
 import cvxpy as cvx
 import numpy as np
 
@@ -56,7 +57,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
 
     # Solve the relaxation.
     rel_val = self.solve(*args, **kwargs)
-    # print "lower bound", rel_val
+    print "lower bound", rel_val
 
     # Setup the problem.
     noncvx_vars = []
@@ -72,11 +73,13 @@ def admm(self, rho=None, max_iter=5, restarts=1,
 
     for var in noncvx_vars:
         obj += (rho_param/2)*cvx.sum_squares(var - var.z + var.u)
+        # obj += cvx.sum_squares(var - var.z + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
 
     # Algorithm.
     best_so_far = [np.inf, {}]
     for outer_iter, rho_val in enumerate(rho):
+        # TODO parallelize.
         for var in noncvx_vars:
             # if outer_iter == 0:
                 var.init_z(random=random)
@@ -94,11 +97,17 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
                 # print rho_val, k, best_so_far[0]
                 for var in noncvx_vars:
+                    # if isinstance(var, Boolean):
+                    #     var.z.value = np.random.uniform(size=var.size) < var.value + var.u.value
+                    # else:
                     var.z.value = var.project(var.value + var.u.value)
                     # var.z.value = var.project(var.value + var.u.value + \
                     #     np.random.normal(scale=sigma, size=var.size))
                     var.u.value += var.value - var.z.value
-
+                    # if k == 0:
+                    #     print outer_iter
+                    #     print var.value
+                    #     print var.z.value
                 old_vars = {var.id:var.value for var in self.variables()}
                 if polish_best:
                     # Try to polish.
@@ -115,6 +124,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                 merit = self.objective.value
                 for constr in self.constraints:
                     merit += 1e6*cvx.sum_entries(constr.violation).value
+                # print "objective", outer_iter, merit
                 if merit <= best_so_far[0]:
                     best_so_far[0] = merit
                     best_so_far[1] = {v.id:v.value for v in prob.variables()}
@@ -131,9 +141,11 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             # TODO
 
     # Unpack result.
-    for var in prob.variables():
+    for var in self.variables():
         var.value = best_so_far[1][var.id]
-    return best_so_far[0]
+
+    self._value = self.objective.value
+    return self._value
 
 def admm_consensus(self, rho=None, max_iter=5, restarts=1,
                    random=False, eps=1e-4, rel_eps=1e-4,

@@ -10,7 +10,7 @@ np.random.seed(1)
 EPSILON = 1e-8
 
 # Randomly generate a feasible 3-SAT problem.
-VARIABLES = 50
+VARIABLES = 5
 CLAUSES_PER_VARIABLE = 3
 CLAUSES = VARIABLES*CLAUSES_PER_VARIABLE
 
@@ -37,10 +37,12 @@ while True:
 # WEIRD. only works if rho varies.
 x = Boolean(VARIABLES)
 prob = Problem(Minimize(0), [A*x <= b])
-RESTARTS = 10
+RESTARTS = 3
+ITERS = 100
 result = prob.solve(method="admm", restarts=RESTARTS,
-                    rho=np.random.uniform(size=RESTARTS),
-                 max_iter=100, solver=ECOS, random=False, polish_best=False)
+                    rho=RESTARTS*[10],
+                    max_iter=ITERS, solver=ECOS, random=False,
+                    polish_best=False, sigma=1e-3)
 
 satisfied = (A*x.value <= b).sum()
 percent_satisfied = 100*satisfied/CLAUSES
@@ -51,3 +53,15 @@ print prob.solve(method="relax_and_round")
 # satisfied = (A*x.value <= b).sum()
 # percent_satisfied = 100*satisfied/CLAUSES
 # print "%s%% of the clauses were satisfied." % percent_satisfied
+
+
+# Try random binary vectors.
+total = 0
+for i in range(RESTARTS*ITERS):
+    x.value = np.random.uniform(size=VARIABLES) < 0.5
+    if (A*x.value <= b).sum() == CLAUSES:
+        total += 1
+print "%s%% of random guesses satisfied" % (100*total/(RESTARTS*ITERS))
+
+
+
