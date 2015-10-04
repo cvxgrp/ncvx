@@ -35,3 +35,5 @@ print "ADMM value", prob.value
 # print np.around(x.value, decimals=3)
 
 print "relax and round value", prob.solve(method="relax_and_round")
+
+# Compare to LASSO.

@@ -4,10 +4,10 @@ from noncvx_admm import *
 import numpy as np
 
 # Traveling salesman problem.
-n = 50
+n = 5
 
 # Get locations.
-np.random.seed(1)
+np.random.seed(2)
 w = 10
 x = np.random.uniform(-w, w, size=(n,1))
 y = np.random.uniform(-w, w, size=(n,1))
@@ -23,29 +23,35 @@ y = np.random.uniform(-w, w, size=(n,1))
 #     x[2*i+1] = x[2*i]
 #     y[2*i+1] = y[2*i] + 4*w/n
 X = np.vstack([x.T,y.T])
-MAX_ITER = 150
-RESTARTS = 10
+
+MAX_ITER = 25
+RESTARTS = 1
 
 # Classical MIP approach.
 # Edge matrix.
 P = Assign(n, n)
-constr = [trace(P) == 0,
-          (P + P.T)/2 - np.ones((n,n))/n << np.cos(2*np.pi/n)*np.eye(n)]
+constr = [trace(P) == 0]#,
+          # (P + P.T)/2 - np.ones((n,n))/n << np.cos(2*np.pi/n)*np.eye(n)]
+mat = (P + P.T)/2 - np.ones((n,n))/n - np.cos(2*np.pi/n)*np.eye(n)
+barrier = pos(lambda_max(mat))
 # Make distance matrix.
 D = np.zeros((n,n))
 for i in range(n):
     for j in range(n):
         D[i,j] = norm(X[:,i] - X[:,j]).value
 
-prob = Problem(Minimize(vec(D).T*vec(P)), constr)
+prob = Problem(Minimize(vec(D).T*vec(P) + 50000*barrier), constr)
 # result = prob.solve(method="relax_and_round")
 # print "relax and round result", result
 result = prob.solve(method="admm", max_iter=MAX_ITER,
                     restarts=RESTARTS, random=True,
-                    rho=np.random.uniform(0,10,size=RESTARTS),
+                    rho=np.random.uniform(0,1,size=RESTARTS),
                     verbose=False, polish_best=False, solver=SCS)
 print "all constraints hold:", np.all([c.value for c in prob.constraints])
 print "final value", result
+print barrier.value
+print lambda_max(mat).value
+print lambda_min(mat).value
 
 import matplotlib.pyplot as plt
 ordered = (X*P.T).value
@@ -82,32 +88,36 @@ plt.show()
 
 #########################################################
 
-# # Make objective.
-# perm = Assign(n, n)
+# Make objective.
+perm = Assign(n, n)
 # ordered = hstack([-w,-w],
 #                  X*perm,
 #                  [w,w])
-# cost = 0
+ordered = X*perm
+cost = norm(ordered[:,-1] - ordered[:,0])
+for i in range(n-1):
+    cost += norm(ordered[:,i+1] - ordered[:,i])
+
+# reg = 0
 # for i in range(n+1):
-#     cost += norm(ordered[:,i+1] - ordered[:,i])
+#     reg += sum_entries(neg(ordered[:,i+1] - ordered[:,i]))
 
-# # reg = 0
-# # for i in range(n+1):
-# #     reg += sum_entries(neg(ordered[:,i+1] - ordered[:,i]))
+prob = Problem(Minimize(cost))
+result = prob.solve(method="admm", max_iter=MAX_ITER,
+                    restarts=RESTARTS, random=True, #rho=RESTARTS*[10],
+                    solver=ECOS, verbose=False, sigma=1.0, polish_best=False)#, tau=1.1, tau_max=100)
+print "all constraints hold:", np.all([c.value for c in prob.constraints])
+print "final value", cost.value
 
-# prob = Problem(Minimize(cost))
-# result = prob.solve(method="admm", max_iter=MAX_ITER,
-#                     restarts=RESTARTS, random=True, #rho=RESTARTS*[10],
-#                     solver=ECOS, verbose=False, sigma=1.0, polish=False)#, tau=1.1, tau_max=100)
-# print "all constraints hold:", np.all([c.value for c in prob.constraints])
-# print "final value", cost.value
-
-# import matplotlib.pyplot as plt
-# for i in range(n+1):
-#     plt.plot(ordered[0,i:i+2].value.T,
-#              ordered[1,i:i+2].value.T,
-#              color = 'brown', marker = 'o')
-# plt.show()
+import matplotlib.pyplot as plt
+plt.plot(ordered.value[0,[0,-1]].T,
+         ordered.value[1,[0,-1]].T,
+         color = 'brown', marker = 'o')
+for i in range(n-1):
+    plt.plot(ordered[0,i:i+2].value.T,
+             ordered[1,i:i+2].value.T,
+             color = 'brown', marker = 'o')
+plt.show()
 
 # print "relax and round result", prob.solve(method="relax_and_round")
 

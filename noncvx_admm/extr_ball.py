@@ -33,11 +33,11 @@ class ExtrBall(NonCvxVariable):
 
     # All values except k-largest (by magnitude) set to zero.
     def _project(self, matrix):
-        length = norm(matrix, 2).value
-        if length < 1:
-            return matrix/length
+        if np.all(matrix == 0):
+            result = np.ones(self.size)
+            return result/norm(result, 2).value
         else:
-            return matrix.copy()
+            return matrix/norm(matrix, 2).value
 
     # Constrain all entries to be the value in the matrix.
     def _fix(self, matrix):
