@@ -109,11 +109,10 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                     #     print var.value
                     #     print var.z.value
                 old_vars = {var.id:var.value for var in self.variables()}
-                if polish_best:
-                    # Try to polish.
-                    polish_opt_val, status = polish(self, *args, **kwargs)
+                # Try to polish.
+                polish_opt_val, status = polish(self, *args, **kwargs)
                 # print "polish_opt_val", polish_opt_val
-                if not polish_best or status == cvx.INFEASIBLE:
+                if status == cvx.INFEASIBLE:
                     # Undo change in var.value.
                     for var in self.variables():
                         if isinstance(var, NonCvxVariable):
@@ -124,7 +123,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
                 merit = self.objective.value
                 for constr in self.constraints:
                     merit += 1e6*cvx.sum_entries(constr.violation).value
-                print "objective", outer_iter, k, merit
+                # print "objective", outer_iter, k, merit
                 if merit <= best_so_far[0]:
                     best_so_far[0] = merit
                     best_so_far[1] = {v.id:v.value for v in prob.variables()}
@@ -140,6 +139,7 @@ def admm(self, rho=None, max_iter=5, restarts=1,
             # Convergence criteria.
             # TODO
 
+    print "best found", best_so_far[0]
     # Unpack result.
     for var in self.variables():
         var.value = best_so_far[1][var.id]
@@ -414,13 +414,27 @@ def get_noncvx_vars(prob):
 
 
 def polish(prob, *args, **kwargs):
-    # Fix noncvx variables and solve.
-    fix_constr = []
-    for var in get_noncvx_vars(prob):
-        fix_constr += var.fix(var.z.value)
-    prob = cvx.Problem(prob.objective, prob.constraints + fix_constr)
-    prob.solve(*args, **kwargs)
-    return prob.value, prob.status
+    # Check if all variables are nonconvex.
+    all_noncvx = True
+    for var in prob.variables():
+        if not getattr(var, "noncvx", False):
+            all_noncvx = False
+    if all_noncvx:
+        if np.all([c.value for c in prob.constraints]):
+            value = prob.objective.value
+            status = OPTIMAL
+        else:
+            value = np.inf
+            status = INFEASIBLE
+        return value, status
+    else:
+        # Fix noncvx variables and solve.
+        fix_constr = []
+        for var in get_noncvx_vars(prob):
+            fix_constr += var.fix(var.z.value)
+        prob = cvx.Problem(prob.objective, prob.constraints + fix_constr)
+        prob.solve(*args, **kwargs)
+        return prob.value, prob.status
 
 # Add admm method to cvx Problem.
 cvx.Problem.register_solve("admm_basic", admm_basic)

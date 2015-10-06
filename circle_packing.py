@@ -23,18 +23,20 @@ l = max_elemwise(l_x0, l_x1)
 
 prob = Problem(Minimize(l))
 
-RESTARTS = 10
-result = prob.solve(method="admm", max_iter=100,
+RESTARTS = 2
+ITERS = 1
+result = prob.solve(method="admm", max_iter=ITERS,
                     restarts=RESTARTS, random=True)
 print result
 
 x_border = [min_x0.value, max_x0.value, max_x0.value,
-            max_x0.value, min_x0.value]
+            min_x0.value, min_x0.value]
 y_border = [min_x1.value, min_x1.value, max_x1.value,
             max_x1.value, min_x1.value]
 
 #plot the circles
-circ = np.linspace(0,2*pi)
+circ = np.linspace(0,2*np.pi)
+import matplotlib.pyplot as plt
 for i in xrange(N):
     plt.plot(X[0,i].value+0.5*np.cos(circ),X[1,i].value+0.5*np.sin(circ),'b')
     # if(colors[i] == 0):

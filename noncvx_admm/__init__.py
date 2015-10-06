@@ -28,3 +28,4 @@ from orthog import Orthog
 from rank import Rank
 from sphere import Sphere
 from soc_boundary import SOCBound
+from tour import Tour
