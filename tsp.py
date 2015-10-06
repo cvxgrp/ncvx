@@ -5,7 +5,7 @@ import numpy as np
 from scipy import linalg as LA
 
 # Traveling salesman problem.
-n = 50
+n = 20
 
 # Get locations.
 np.random.seed(2)
@@ -24,9 +24,39 @@ y = np.random.uniform(-w, w, size=(n,1))
 #     x[2*i+1] = x[2*i]
 #     y[2*i+1] = y[2*i] + 4*w/n
 X = np.vstack([x.T,y.T])
+# Make distance matrix.
+D = np.zeros((n,n))
+for i in range(n):
+    for j in range(n):
+        D[i,j] = norm(X[:,i] - X[:,j]).value
 
-MAX_ITER = 100
-RESTARTS = 2
+
+
+MAX_ITER = 75
+RESTARTS = 5
+
+# True solution.
+P = Bool(n, n)
+constr = [trace(P) == 0,
+          np.ones((1,n))*P == 1,
+          P*np.ones((n,1)) == 1]
+u = Int(n)
+for i in range(1,n):
+    for j in range(n):
+        if i != j:
+            constr += [u[i] - u[j] + n*P[i,j] <= n - 1]
+
+prob = Problem(Minimize(vec(D).T*vec(P)), constr)
+result = prob.solve(solver=GUROBI, TimeLimit=240)
+print "true value", result
+
+import matplotlib.pyplot as plt
+ordered = (X*P.T).value
+for i in range(n):
+    plt.plot([X[0,i], ordered[0,i]],
+             [X[1,i], ordered[1,i]],
+             color = 'brown', marker = 'o')
+plt.show()
 
 # Classical MIP approach.
 # Edge matrix.
@@ -38,14 +68,8 @@ RESTARTS = 2
 P = Tour(n)
 constr = []
 
-# Make distance matrix.
-D = np.zeros((n,n))
-for i in range(n):
-    for j in range(n):
-        D[i,j] = norm(X[:,i] - X[:,j]).value
-
 prob = Problem(Minimize(vec(D).T*vec(P)), constr)
-# result = prob.solve(method="relax_and_round")
+# result = prob.solve(method="relax_and_round", solver=SCS)
 # print "relax and round result", result
 result = prob.solve(method="admm", max_iter=MAX_ITER,
                     restarts=RESTARTS, random=True,
@@ -63,63 +87,38 @@ for i in range(n):
              color = 'brown', marker = 'o')
 plt.show()
 
-
-# True solution.
-P = Bool(n, n)
-constr = [trace(P) == 0,
-          np.ones((1,n))*P == 1,
-          P*np.ones((n,1)) == 1]
-u = Int(n)
-for i in range(1,n):
-    for j in range(n):
-        if i != j:
-            constr += [u[i] - u[j] + n*P[i,j] <= n - 1]
-
-prob = Problem(Minimize(vec(D).T*vec(P)), constr)
-result = prob.solve(solver=GUROBI, TimeLimit=120)
-print "true value", result
-
-import matplotlib.pyplot as plt
-ordered = (X*P.T).value
-for i in range(n):
-    plt.plot([X[0,i], ordered[0,i]],
-             [X[1,i], ordered[1,i]],
-             color = 'brown', marker = 'o')
-plt.show()
-
-
 #########################################################
 
-# Make objective.
-perm = Assign(n, n)
-# ordered = hstack([-w,-w],
-#                  X*perm,
-#                  [w,w])
-ordered = X*perm
-cost = norm(ordered[:,-1] - ordered[:,0])
-for i in range(n-1):
-    cost += norm(ordered[:,i+1] - ordered[:,i])
+# # Make objective.
+# perm = Assign(n, n)
+# # ordered = hstack([-w,-w],
+# #                  X*perm,
+# #                  [w,w])
+# ordered = X*perm
+# cost = norm(ordered[:,-1] - ordered[:,0])
+# for i in range(n-1):
+#     cost += norm(ordered[:,i+1] - ordered[:,i])
 
-# reg = 0
-# for i in range(n+1):
-#     reg += sum_entries(neg(ordered[:,i+1] - ordered[:,i]))
+# # reg = 0
+# # for i in range(n+1):
+# #     reg += sum_entries(neg(ordered[:,i+1] - ordered[:,i]))
 
-prob = Problem(Minimize(cost))
-result = prob.solve(method="admm", max_iter=MAX_ITER,
-                    restarts=RESTARTS, random=True, #rho=RESTARTS*[10],
-                    solver=ECOS, verbose=False, sigma=1.0, polish_best=False)#, tau=1.1, tau_max=100)
-print "all constraints hold:", np.all([c.value for c in prob.constraints])
-print "final value", cost.value
+# prob = Problem(Minimize(cost))
+# result = prob.solve(method="admm", max_iter=MAX_ITER,
+#                     restarts=RESTARTS, random=True, #rho=RESTARTS*[10],
+#                     solver=ECOS, verbose=False, sigma=1.0, polish_best=False)#, tau=1.1, tau_max=100)
+# print "all constraints hold:", np.all([c.value for c in prob.constraints])
+# print "final value", cost.value
 
-import matplotlib.pyplot as plt
-plt.plot(ordered.value[0,[0,-1]].T,
-         ordered.value[1,[0,-1]].T,
-         color = 'brown', marker = 'o')
-for i in range(n-1):
-    plt.plot(ordered[0,i:i+2].value.T,
-             ordered[1,i:i+2].value.T,
-             color = 'brown', marker = 'o')
-plt.show()
+# import matplotlib.pyplot as plt
+# plt.plot(ordered.value[0,[0,-1]].T,
+#          ordered.value[1,[0,-1]].T,
+#          color = 'brown', marker = 'o')
+# for i in range(n-1):
+#     plt.plot(ordered[0,i:i+2].value.T,
+#              ordered[1,i:i+2].value.T,
+#              color = 'brown', marker = 'o')
+# plt.show()
 
 # print "relax and round result", prob.solve(method="relax_and_round")
 
