@@ -39,9 +39,9 @@ class Card(NonCvxVariable):
         """Initializes the value of the replicant variable.
         """
         if random:
-            alpha = np.random.uniform(0, k)
+            alpha = np.random.uniform(0, self.k)
             y = np.random.uniform(-self.M, self.M, size=self.size)
-            self.z.value = np.zeros(self.size)
+            self.z.value = y*alpha/np.abs(y).sum()
         else:
             self.z.value = np.zeros(self.size)
 
@@ -77,4 +77,3 @@ class Card(NonCvxVariable):
         constr += [lu.create_leq(LInf_obj, M_const)] + LInf_constr
 
         return (obj, constr)
-

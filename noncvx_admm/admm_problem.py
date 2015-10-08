@@ -23,6 +23,7 @@ from boolean import Boolean
 import multiprocessing
 import cvxpy as cvx
 import numpy as np
+import random
 
 # Use ADMM to attempt non-convex problem.
 def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
@@ -47,23 +48,26 @@ def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
     return polish(self, *args, **kwargs)
 
 def admm_inner_iter(data):
-    orig_prob, rho_val, gamma, max_iter, random, polish_best, args, kwargs = data
+    (idx, orig_prob, rho_val, gamma, max_iter,
+    random_z, polish_best, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
+    np.random.seed(idx)
+    random.seed(idx)
     # Form ADMM problem.
     obj = orig_prob.objective.args[0]
     for var in noncvx_vars:
         obj += (rho_val/2)*cvx.sum_squares(var - var.z + var.u)
     prob = cvx.Problem(cvx.Minimize(obj), orig_prob.constraints)
 
-    best_so_far = [np.inf, {}]
     for var in noncvx_vars:
-        var.init_z(random=random)
+        var.init_z(random=random_z)
         var.init_u()
+
+    best_so_far = [np.inf, {}]
     # ADMM loop
     for k in range(max_iter):
         try:
-            prob.get_problem_data(cvx.SCS)
             prob.solve(*args, **kwargs)
         except cvx.SolverError, e:
             pass
@@ -97,7 +101,7 @@ def admm_inner_iter(data):
             merit = orig_prob.objective.value
             for constr in orig_prob.constraints:
                 merit += gamma*cvx.sum_entries(constr.violation).value
-            # print "objective", outer_iter, k, merit
+            # print "objective", idx, k, merit
             if merit <= best_so_far[0]:
                 best_so_far[0] = merit
                 best_so_far[1] = {v.id:v.value for v in prob.variables()}
@@ -134,7 +138,8 @@ def admm(self, rho=None, max_iter=5, restarts=1,
     pool = multiprocessing.Pool(num_procs)
     tmp_prob = cvx.Problem(self.objective, self.constraints)
     best_per_rho = pool.map(admm_inner_iter,
-        [(tmp_prob, rho_val, gamma, max_iter, random, polish_best, args, kwargs) for rho_val in rho])
+        [(idx, tmp_prob, rho_val, gamma, max_iter,
+          random, polish_best, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]

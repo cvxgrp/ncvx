@@ -5,7 +5,7 @@ import numpy as np
 from scipy import linalg as LA
 
 # Traveling salesman problem.
-n = 20
+n = 100
 
 # Get locations.
 np.random.seed(2)
