@@ -33,7 +33,7 @@ kelly_colors_hex = [
     "#232C16", # Dark Olive Green
     ]
 
-n = 20
+n = 30
 m = (n*(n-1)//2)//5
 G = nx.gnm_random_graph(n, m, seed=1)
 # Upper bound for chromatic number.

@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from noncvx_variable import NonCvxVariable
+from .noncvx_variable import NonCvxVariable
 from cvxpy import norm
 from cvxpy.atoms.affine.index import index
 from cvxpy.constraints.second_order import SOC

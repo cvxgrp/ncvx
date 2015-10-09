@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from noncvx_variable import NonCvxVariable
+from .noncvx_variable import NonCvxVariable
 import cvxpy.lin_ops.lin_utils as lu
 import numpy as np
 

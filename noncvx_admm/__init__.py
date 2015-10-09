@@ -17,15 +17,15 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import admm_problem
-from assign import Assign
-from boolean import Boolean
-from card import Card
-from choose import Choose
-from extr_ball import ExtrBall
-from integer import Integer
-from orthog import Orthog
-from rank import Rank
-from sphere import Sphere
-from soc_boundary import SOCBound
-from tour import Tour
+from . import admm_problem
+from .assign import Assign
+from .boolean import Boolean
+from .card import Card
+from .choose import Choose
+from .extr_ball import ExtrBall
+from .integer import Integer
+from .orthog import Orthog
+from .rank import Rank
+from .sphere import Sphere
+from .soc_boundary import SOCBound
+from .tour import Tour

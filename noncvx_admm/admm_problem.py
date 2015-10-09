@@ -119,7 +119,7 @@ def admm_inner_iter(data):
 # Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=50, restarts=5,
          random=False, sigma=0.01, gamma=1e6, polish_best=True,
-         num_procs=None, seed=1,
+         num_procs=None, parallel=True, seed=1,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -135,13 +135,18 @@ def admm(self, rho=None, max_iter=50, restarts=5,
     print "lower bound", rel_val
 
     # Algorithm.
-    pool = multiprocessing.Pool(num_procs)
-    tmp_prob = cvx.Problem(self.objective, self.constraints)
-    best_per_rho = pool.map(admm_inner_iter,
-        [(idx, tmp_prob, rho_val, gamma, max_iter,
-          random, polish_best, seed, args, kwargs) for idx, rho_val in enumerate(rho)])
-    pool.close()
-    pool.join()
+    if parallel:
+        pool = multiprocessing.Pool(num_procs)
+        tmp_prob = cvx.Problem(self.objective, self.constraints)
+        best_per_rho = pool.map(admm_inner_iter,
+            [(idx, tmp_prob, rho_val, gamma, max_iter,
+              random, polish_best, seed, args, kwargs) for idx, rho_val in enumerate(rho)])
+        pool.close()
+        pool.join()
+    else:
+        best_per_rho = pool.map(admm_inner_iter,
+            [(idx, self, rho_val, gamma, max_iter,
+              random, polish_best, seed, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]

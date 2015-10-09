@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from assign import Assign
+from .assign import Assign
 import cvxpy.lin_ops.lin_utils as lu
 import numpy as np
 from cvxpy.constraints.semidefinite import SDP

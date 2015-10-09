@@ -7,6 +7,6 @@ setup(
     packages=['noncvx_admm'],
     license='GPLv3',
     zip_safe=False,
-    install_requires=["cvxpy >= 0.2.16"],
+    install_requires=["cvxpy >= 0.2.16", "munkres"],
     use_2to3=True,
 )

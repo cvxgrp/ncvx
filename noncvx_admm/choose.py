@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from boolean import Boolean
+from .boolean import Boolean
 import cvxopt
 import numpy as np
 from itertools import product
