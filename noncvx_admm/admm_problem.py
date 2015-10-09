@@ -49,11 +49,11 @@ def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
 
 def admm_inner_iter(data):
     (idx, orig_prob, rho_val, gamma, max_iter,
-    random_z, polish_best, args, kwargs) = data
+    random_z, polish_best, seed, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
-    np.random.seed(idx)
-    random.seed(idx)
+    np.random.seed(idx + seed)
+    random.seed(idx + seed)
     # Form ADMM problem.
     obj = orig_prob.objective.args[0]
     for var in noncvx_vars:
@@ -117,9 +117,9 @@ def admm_inner_iter(data):
     return best_so_far
 
 # Use ADMM to attempt non-convex problem.
-def admm(self, rho=None, max_iter=5, restarts=1,
+def admm(self, rho=None, max_iter=50, restarts=5,
          random=False, sigma=0.01, gamma=1e6, polish_best=True,
-         num_procs=None,
+         num_procs=None, seed=1,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -139,7 +139,9 @@ def admm(self, rho=None, max_iter=5, restarts=1,
     tmp_prob = cvx.Problem(self.objective, self.constraints)
     best_per_rho = pool.map(admm_inner_iter,
         [(idx, tmp_prob, rho_val, gamma, max_iter,
-          random, polish_best, args, kwargs) for idx, rho_val in enumerate(rho)])
+          random, polish_best, seed, args, kwargs) for idx, rho_val in enumerate(rho)])
+    pool.close()
+    pool.join()
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]

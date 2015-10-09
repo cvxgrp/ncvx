@@ -7,7 +7,7 @@ import random
 np.random.seed(1)
 random.seed(1)
 
-m = 100
+m = 161
 n = 2*m
 k = 10
 M = 1
@@ -39,7 +39,7 @@ cost = sum_squares(A*x - b)
 prob = Problem(Minimize(cost))
 
 RESTARTS = 5
-ITERS = 100
+ITERS = 50
 prob.solve(method="admm", restarts=RESTARTS,
            # rho=np.random.uniform(1,10,size=RESTARTS),
            max_iter=ITERS, solver=MOSEK, random=True)
