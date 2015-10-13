@@ -106,7 +106,7 @@ def admm_inner_iter(data):
             merit = orig_prob.objective.value
             for constr in orig_prob.constraints:
                 merit += gamma*cvx.sum_entries(constr.violation).value
-            print "objective", idx, k, merit
+            # print "objective", idx, k, merit
             if merit <= best_so_far[0]:
                 best_so_far[0] = merit
                 best_so_far[1] = {v.id:v.value for v in prob.variables()}
