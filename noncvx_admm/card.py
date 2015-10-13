@@ -39,7 +39,7 @@ class Card(NonCvxVariable):
         """Initializes the value of the replicant variable.
         """
         if random:
-            alpha = np.random.uniform(0, self.k)
+            alpha = np.random.uniform(0, self.k*self.M)
             y = np.random.uniform(-self.M, self.M, size=self.size)
             self.z.value = y*alpha/np.abs(y).sum()
         else:

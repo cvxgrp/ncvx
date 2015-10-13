@@ -1,3 +1,4 @@
+from __future__ import division
 from cvxpy import *
 from noncvx_admm import *
 import networkx as nx
@@ -33,9 +34,9 @@ kelly_colors_hex = [
     "#232C16", # Dark Olive Green
     ]
 
-n = 30
+n = 40
 m = (n*(n-1)//2)//5
-G = nx.gnm_random_graph(n, m, seed=1)
+G = nx.gnm_random_graph(n, m, seed=2)
 # Upper bound for chromatic number.
 c = max([G.degree(i) for i in range(n)]) + 1
 # Lower bound for chromatic number.
@@ -64,7 +65,7 @@ MAX_ITER = 50
 # print prob.solve(method="relax_and_round")
 
 prob.solve(method="admm", max_iter=MAX_ITER, random=True,
-           rho=np.random.uniform(1, 5, size=RESTARTS), seed=1,
+           rho=np.random.uniform(5, 10, size=RESTARTS), seed=1,
            restarts=RESTARTS, polish_best=False)
 print sum([norm(Z[:,j],'inf') for j in range(c)]).value
 
