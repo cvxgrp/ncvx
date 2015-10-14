@@ -63,7 +63,7 @@ def admm_inner_iter(data):
     for var in noncvx_vars:
         # var.init_z(random=random_z)
         # var.init_u()
-        if idx == 0:
+        if idx == 0 or not random_z:
             var.z.value = np.zeros(var.size)
         else:
             var.z.value = np.random.normal(0, sigma, var.size)
@@ -74,6 +74,7 @@ def admm_inner_iter(data):
     for k in range(max_iter):
         try:
             prob.solve(*args, **kwargs)
+            # print "post solve cost", idx, k, orig_prob.objective.value
         except cvx.SolverError, e:
             pass
         if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
@@ -94,6 +95,7 @@ def admm_inner_iter(data):
             if polish_best:
                 # Try to polish.
                 polish_opt_val, status = polish(orig_prob, *args, **kwargs)
+                # print "post polish cost", idx, k, orig_prob.objective.value
             # print "polish_opt_val", polish_opt_val
             if not polish_best or status == cvx.INFEASIBLE:
                 # Undo change in var.value.
@@ -105,7 +107,8 @@ def admm_inner_iter(data):
 
             merit = orig_prob.objective.value
             for constr in orig_prob.constraints:
-                merit += gamma*cvx.sum_entries(constr.violation).value
+                if cvx.sum_entries(constr.violation).value > 1e-1:
+                    merit += gamma*cvx.sum_entries(constr.violation).value
             # print "objective", idx, k, merit
             if merit <= best_so_far[0]:
                 best_so_far[0] = merit

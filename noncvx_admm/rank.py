@@ -24,9 +24,10 @@ import numpy as np
 
 class Rank(NonCvxVariable):
     """ A variable satisfying Rank(X) <= k. """
-    def __init__(self, rows, cols, k, M=None, *args, **kwargs):
+    def __init__(self, rows, cols, k, M=None, symmetric=False, *args, **kwargs):
         self.k = k
         self.M = M
+        self.symmetric = symmetric
         super(Rank, self).__init__(rows, cols, *args, **kwargs)
 
     def init_z(self, random):
@@ -40,9 +41,15 @@ class Rank(NonCvxVariable):
     def _project(self, matrix):
         """All singular values except k-largest (by magnitude) set to zero.
         """
-        U, s, V = np.linalg.svd(matrix)
-        s[self.k+1:] = 0
-        return U.dot(np.diag(s)).dot(V)
+        if self.symmetric:
+            w, V = np.linalg.eigh(matrix)
+            w_sorted_idxs = np.argsort(-w)
+            w[w_sorted_idxs[self.k:]] = 0
+            return V.dot(np.diag(w)).dot(V.T)
+        else:
+            U, s, V = np.linalg.svd(matrix)
+            s[self.k:] = 0
+            return U.dot(np.diag(s)).dot(V)
 
     # Constrain all entries to be the value in the matrix.
     def _fix(self, matrix):
