@@ -12,7 +12,7 @@ k = 5
 SNR = 20
 SCALE = 1
 F = np.random.randn(n, k)*SCALE
-D_true = np.abs(np.random.randn(n, 1))*SCALE
+D_true = np.random.chisquare(1, size=(n, 1))*SCALE
 Sigma_true = F.dot(F.T) + np.diag(D_true)
 
 
@@ -44,9 +44,9 @@ print "relax and round value", cost.value
 # ADMM solution.
 prob = Problem(Minimize(cost), constraints)
 RESTARTS = 5
-ITERS = 1
+ITERS = 50
 prob.solve(method="admm", restarts=RESTARTS,
-           # rho=np.random.uniform(100,101,size=RESTARTS),
+           # rho=np.random.uniform(1,5,size=RESTARTS),
            max_iter=ITERS, solver=SCS, random=True, sigma=1)
 print "ADMM value", cost.value
 
@@ -60,7 +60,7 @@ cost = sum_squares(Sigma - Sigma_lr - D)
 constraints = [D_vec >= 0]
 prob = Problem(Minimize(cost + gamma*reg), constraints)
 found_lr = False
-for gamma_val in np.logspace(-2,4,num=100):
+for gamma_val in np.logspace(-2,2,num=250):
     gamma.value = gamma_val
     prob.solve(solver=SCS)
     w = np.linalg.eigvals(Sigma_lr.value)
