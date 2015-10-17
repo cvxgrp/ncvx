@@ -16,7 +16,7 @@ D_true = np.random.chisquare(1, size=(n, 1))*SCALE
 Sigma_true = F.dot(F.T) + np.diag(D_true)
 
 
-variance = norm(Sigma_true, 2).value/(np.sqrt(n*n)*SNR)
+variance = norm(Sigma_true, 'fro').value/(np.sqrt(n*n)*SNR)
 noise = np.random.normal(0, variance, size=(n,n))
 Sigma = Sigma_true + noise
 
@@ -47,7 +47,8 @@ RESTARTS = 5
 ITERS = 50
 prob.solve(method="admm", restarts=RESTARTS,
            # rho=np.random.uniform(1,5,size=RESTARTS),
-           max_iter=ITERS, solver=SCS, random=True, sigma=1)
+           max_iter=ITERS, solver=SCS, random=True, sigma=1,
+           show_progress=True)
 print "ADMM value", cost.value
 
 # Compare to nuclear norm.
@@ -60,7 +61,7 @@ cost = sum_squares(Sigma - Sigma_lr - D)
 constraints = [D_vec >= 0]
 prob = Problem(Minimize(cost + gamma*reg), constraints)
 found_lr = False
-for gamma_val in np.logspace(-2,2,num=250):
+for gamma_val in np.logspace(-2,2,num=1000):
     gamma.value = gamma_val
     prob.solve(solver=SCS)
     w = np.linalg.eigvals(Sigma_lr.value)

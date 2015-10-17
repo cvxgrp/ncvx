@@ -47,18 +47,32 @@ def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
             var.u.value += var.value - var.z.value
     return polish(self, *args, **kwargs)
 
+def get_constr_error(constr):
+    if isinstance(constr, cvx.constraints.EqConstraint):
+        error = cvx.abs(constr.args[0] - constr.args[1])
+    elif isinstance(constr, cvx.constraints.LeqConstraint):
+        error = cvx.pos(constr.args[0] - constr.args[1])
+    elif isinstance(constr, cvx.constraints.PSDConstraint):
+        mat = constr.args[0] - constr.args[1]
+        error = cvx.neg(cvx.lambda_min(mat + mat.T)/2)
+    return cvx.sum_entries(error)
+
 def admm_inner_iter(data):
     (idx, orig_prob, rho_val, gamma, max_iter,
-    random_z, polish_best, seed, sigma, args, kwargs) = data
+    random_z, polish_best, seed, sigma, show_progress, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
     np.random.seed(idx + seed)
     random.seed(idx + seed)
+    # Augmented objective.
+    aug_obj = orig_prob.objective.args[0]
+    for constr in orig_prob.constraints:
+        aug_obj += gamma*get_constr_error(constr)
     # Form ADMM problem.
-    obj = orig_prob.objective.args[0]
+    obj = aug_obj
     for var in noncvx_vars:
         obj += (rho_val/2)*cvx.sum_squares(var - var.z + var.u)
-    prob = cvx.Problem(cvx.Minimize(obj), orig_prob.constraints)
+    prob = cvx.Problem(cvx.Minimize(obj))
 
     for var in noncvx_vars:
         # var.init_z(random=random_z)
@@ -105,11 +119,12 @@ def admm_inner_iter(data):
                     else:
                         var.value = old_vars[var.id]
 
-            merit = orig_prob.objective.value
-            for constr in orig_prob.constraints:
-                if cvx.sum_entries(constr.violation).value > 1e-1:
-                    merit += gamma*cvx.sum_entries(constr.violation).value
-            # print "objective", idx, k, merit
+            merit = aug_obj.value
+            # for constr in orig_prob.constraints:
+            #     if cvx.sum_entries(constr.violation).value > 1e-1:
+            #         merit += gamma*cvx.sum_entries(constr.violation).value
+            if show_progress:
+                print "objective", idx, k, merit
             if merit <= best_so_far[0]:
                 best_so_far[0] = merit
                 best_so_far[1] = {v.id:v.value for v in prob.variables()}
@@ -127,7 +142,7 @@ def admm_inner_iter(data):
 # Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=50, restarts=5,
          random=False, sigma=1.0, gamma=1e6, polish_best=True,
-         num_procs=None, parallel=True, seed=1,
+         num_procs=None, parallel=True, seed=1, show_progress=False,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -148,7 +163,7 @@ def admm(self, rho=None, max_iter=50, restarts=5,
         tmp_prob = cvx.Problem(self.objective, self.constraints)
         best_per_rho = pool.map(admm_inner_iter,
             [(idx, tmp_prob, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, args, kwargs) for idx, rho_val in enumerate(rho)])
+              random, polish_best, seed, sigma, show_progress, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:

@@ -54,6 +54,7 @@ reg = norm(x, 1)
 cost = sum_squares(A*x - b)
 prob = Problem(Minimize(cost + gamma*reg), [abs(x) <= M])
 found_card = False
+# num is number of values of gamma.
 for gamma_val in np.logspace(-2,4,num=100):
     gamma.value = gamma_val
     prob.solve(solver=MOSEK)
