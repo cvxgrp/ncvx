@@ -80,7 +80,7 @@ class Tour(Assign):
         # Diagonal == 0 constraint.
         constraints += [lu.create_eq(lu.diag_mat(obj))]
         # Spectral constraint.
-        mat_val = np.cos(2*np.pi/n)*np.eye(n) + np.ones((n,n))/n
+        mat_val = np.cos(2*np.pi/n)*np.eye(n) + 4*np.ones((n,n))/n
         mat_const = lu.create_const(mat_val, (n, n))
         symm = lu.sum_expr([obj, lu.transpose(obj)])
         two_const = lu.create_const(2, (1,1))
