@@ -167,9 +167,9 @@ def admm(self, rho=None, max_iter=50, restarts=5,
         pool.close()
         pool.join()
     else:
-        best_per_rho = pool.map(admm_inner_iter,
+        best_per_rho = map(admm_inner_iter,
             [(idx, self, rho_val, gamma, max_iter,
-              random, polish_best, seed, args, kwargs) for idx, rho_val in enumerate(rho)])
+              random, polish_best, seed, sigma, show_progress, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]
