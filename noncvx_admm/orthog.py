@@ -41,7 +41,7 @@ class Orthog(NonCvxVariable):
         return U.dot(np.diag(s)).dot(V)
 
     # Constrain all entries to be the value in the matrix.
-    def _fix(self, matrix):
+    def _restrict(self, matrix):
         return [self == matrix]
 
     def canonicalize(self):

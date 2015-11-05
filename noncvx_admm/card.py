@@ -56,7 +56,7 @@ class Card(NonCvxVariable):
 
     # Constrain all entries to be zero that correspond to
     # zeros in the matrix.
-    def _fix(self, matrix):
+    def _restrict(self, matrix):
         constraints = []
         rows, cols = intf.size(matrix)
         for i in range(rows):

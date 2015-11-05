@@ -46,7 +46,7 @@ class Sphere(NonCvxVariable):
             return matrix/norm(matrix, 2).value
 
     # Constrain all entries to be the value in the matrix.
-    def _fix(self, matrix):
+    def _restrict(self, matrix):
         return [self == matrix]
 
     def canonicalize(self):

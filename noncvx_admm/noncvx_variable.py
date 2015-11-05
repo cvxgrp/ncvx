@@ -66,11 +66,11 @@ class NonCvxVariable(cvxpy.Variable):
         return NotImplemented
 
     # Wrapper to validate matrix and update curvature.
-    def fix(self, matrix):
+    def restrict(self, matrix):
         matrix = self.project(matrix)
-        return self._fix(matrix)
+        return self._restrict(matrix)
 
     # Fix the variable so it obeys the non-convex constraint.
     @abc.abstractmethod
-    def _fix(self, matrix):
+    def _restrict(self, matrix):
         return NotImplemented

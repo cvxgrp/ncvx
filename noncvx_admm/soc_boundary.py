@@ -54,7 +54,7 @@ class SOCBound(NonCvxVariable):
         return result
 
     # Constrain all entries to be the value in the matrix.
-    def _fix(self, matrix):
+    def _restrict(self, matrix):
         return [self == matrix]
 
     def canonicalize(self):

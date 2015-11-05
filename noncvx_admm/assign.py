@@ -73,7 +73,7 @@ class Assign(Boolean):
 
     # Constrain all entries to be zero that correspond to
     # zeros in the matrix.
-    def _fix(self, matrix):
+    def _restrict(self, matrix):
         return [self == matrix]
 
     # In the relaxation, we have 0 <= var <= 1.

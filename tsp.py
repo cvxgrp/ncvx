@@ -5,7 +5,7 @@ import numpy as np
 from scipy import linalg as LA
 
 # Traveling salesman problem.
-n = 100
+n = 50
 
 # Get locations.
 np.random.seed(2)
@@ -46,17 +46,17 @@ for i in range(1,n):
         if i != j:
             constr += [u[i] - u[j] + n*P[i,j] <= n - 1]
 
-prob = Problem(Minimize(vec(D).T*vec(P)), constr)
-result = prob.solve(solver=GUROBI, TimeLimit=240)
-print "true value", result
+# prob = Problem(Minimize(vec(D).T*vec(P)), constr)
+# result = prob.solve(solver=GUROBI, TimeLimit=240)
+# print "true value", result
 
-import matplotlib.pyplot as plt
-ordered = (X*P.T).value
-for i in range(n):
-    plt.plot([X[0,i], ordered[0,i]],
-             [X[1,i], ordered[1,i]],
-             color = 'brown', marker = 'o')
-plt.show()
+# import matplotlib.pyplot as plt
+# ordered = (X*P.T).value
+# for i in range(n):
+#     plt.plot([X[0,i], ordered[0,i]],
+#              [X[1,i], ordered[1,i]],
+#              color = 'brown', marker = 'o')
+# plt.show()
 
 # Classical MIP approach.
 # Edge matrix.
@@ -71,10 +71,10 @@ constr = []
 prob = Problem(Minimize(vec(D).T*vec(P)), constr)
 # result = prob.solve(method="relax_and_round", solver=SCS)
 # print "relax and round result", result
-result = prob.solve(method="admm", max_iter=MAX_ITER,
+result = prob.solve(method="admm", max_iter=MAX_ITER, parallel=False,
                     restarts=RESTARTS, random=True,
                     rho=np.random.uniform(0,1,size=RESTARTS),
-                    verbose=False, polish_best=False, solver=SCS)
+                    verbose=True, polish_best=False, solver=CVXOPT)
 print "all constraints hold:", np.all([c.value for c in prob.constraints])
 print "final value", result
 # print barrier.value

@@ -18,6 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
+from cvxpy import Variable
 import numpy as np
 
 # TODO nuclear norm as convex relaxation?
@@ -52,8 +53,19 @@ class Rank(NonCvxVariable):
             return U.dot(np.diag(s)).dot(V)
 
     # Constrain all entries to be the value in the matrix.
-    def _fix(self, matrix):
-        return [self == matrix]
+    def _restrict(self, matrix):
+        if self.symmetric:
+            w, V = np.linalg.eigh(matrix)
+            w_sorted_idxs = np.argsort(-w)
+            pos_w = w[w_sorted_idxs[:self.k]]
+            pos_V = V[:,w_sorted_idxs[:self.k]]
+            # print V.dot(np.diag(w)).dot(V.T) - pos_V.dot(np.diag(pos_w)).dot(pos_V.T)
+            Sigma = Variable(self.k, self.k)
+            return [self == pos_V*Sigma*pos_V.T]
+        else:
+            U, s, V = np.linalg.svd(matrix)
+            Sigma = Variable(self.k, self.k)
+            return [self == U[:,:self.k]*Sigma*V.T[:self.k,:]]
 
     # def canonicalize(self):
     #     norm(self, 2) <= self.M

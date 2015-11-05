@@ -1,14 +1,15 @@
 from __future__ import division
 from cvxpy import *
 from noncvx_admm import *
+from noncvx_admm.admm_problem import polish
 import numpy as np
 import random
 
 np.random.seed(1)
 random.seed(1)
 
-n = 10
-k = 5
+n = 12
+k = n//2
 SNR = 20
 SCALE = 1
 F = np.random.randn(n, k)*SCALE
@@ -36,9 +37,9 @@ Sigma_lr = Rank(n, n, k, symmetric=True)
 D_vec = Variable(n)
 D = diag(D_vec)
 cost = sum_squares(Sigma - Sigma_lr - D)
-constraints = [D_vec >= 0, Sigma_lr == Sigma_lr.T, Sigma_lr >> 0]
+constraints = [D_vec >= 0, Sigma_lr == Sigma_lr.T, Sigma_lr == Semidef(n)]
 prob = Problem(Minimize(cost), constraints)
-prob.solve(method="relax_and_round", solver=SCS)
+prob.solve(method="relax_project_polish", solver=SCS)
 print "relax and round value", cost.value
 
 # ADMM solution.
@@ -46,32 +47,33 @@ prob = Problem(Minimize(cost), constraints)
 RESTARTS = 5
 ITERS = 50
 prob.solve(method="admm", restarts=RESTARTS,
-           # rho=np.random.uniform(1,5,size=RESTARTS),
-           max_iter=ITERS, solver=SCS, random=True, sigma=1,
-           show_progress=True)
+           rho=np.random.uniform(1,5,size=RESTARTS),
+           max_iter=ITERS, solver=MOSEK, random=True, sigma=1,
+           show_progress=True, parallel=True)
 print "ADMM value", cost.value
 
 # Compare to nuclear norm.
 gamma = Parameter(sign="positive")
-Sigma_lr = Semidef(n)
+# Sigma_lr = Semidef(n)
 reg = trace(Sigma_lr)
-D_vec = Variable(n)
-D = diag(D_vec)
-cost = sum_squares(Sigma - Sigma_lr - D)
-constraints = [D_vec >= 0]
+# D_vec = Variable(n)
+# D = diag(D_vec)
+# cost = sum_squares(Sigma - Sigma_lr - D)
+# constraints = [D_vec >= 0]
 prob = Problem(Minimize(cost + gamma*reg), constraints)
 found_lr = False
 for gamma_val in np.logspace(-2,2,num=1000):
     gamma.value = gamma_val
-    prob.solve(solver=SCS)
+    prob.solve(solver=MOSEK)
     w = np.linalg.eigvals(Sigma_lr.value)
     rank = sum(w > 1e-3)
     if rank <= k:
         print "rank = ", rank
         # Polish.
-        polish_prob = Problem(Minimize(cost),
-                              constraints + [Sigma_lr == Sigma_lr.value])
-        print polish_prob.solve(solver=SCS)
+        gamma.value = 0
+        print prob.value
+        print polish(prob, solver=MOSEK)
+        # print polish_prob.solve(solver=MOSEK)
         found_lr = True
         break
 assert found_lr
