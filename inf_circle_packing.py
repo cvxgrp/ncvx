@@ -2,7 +2,7 @@ from __future__ import division
 import cvxpy as cp, numpy as np, cvxopt, matplotlib.pyplot as plt, pickle
 import noncvx_admm as ncvx
 
-N = 10 # number of circles
+N = 3 # number of circles
 np.random.seed(0)
 
 #define variables.
@@ -37,7 +37,7 @@ soc_bound_vars = []
 for i in xrange(N-1):
     for j in xrange(i+1,N):
         t = cp.Variable()
-        soc_bound_vars.append(ncvx.ExtrBall(2))
+        soc_bound_vars.append(ncvx.ExtrBall(2, M=))
         constraints += [
             cp.vstack(x_vals[i] - x_vals[j],
                       y_vals[i] - y_vals[j]) == soc_bound_vars[-1],
@@ -63,8 +63,10 @@ prob = cp.Problem(objective, constraints)
 # for iteration in xrange(max_iter):
 RESTARTS = 5
 ITERS = 50
-result = prob.solve(method="admm", max_iter=ITERS,
-                    restarts=RESTARTS, random=True, switch_updates=True)
+result = prob.solve(method="admm", max_iter=100, random=True, seed=1,
+           # rho=np.random.uniform(5, 10, size=RESTARTS),
+           restarts=RESTARTS, polish_best=True,
+           show_progress=True)
 print result
 # for var in soc_bound_vars:
 #     print var.value

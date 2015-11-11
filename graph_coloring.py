@@ -2,6 +2,7 @@ from __future__ import division
 from cvxpy import *
 from noncvx_admm import *
 import networkx as nx
+from networkx.algorithms.approximation.clique import max_clique as max_clique_approx
 import random
 import numpy as np
 from matplotlib import colors
@@ -34,20 +35,20 @@ kelly_colors_hex = [
     "#232C16", # Dark Olive Green
     ]
 
-n = 40
-m = (n*(n-1)//2)//5
+n = 30
+m = (n*(n-1)//2)//10
 G = nx.gnm_random_graph(n, m, seed=2)
 # Upper bound for chromatic number.
 c = max([G.degree(i) for i in range(n)]) + 1
 # Lower bound for chromatic number.
-max_clique = max((len(clique), clique) for clique in nx.find_cliques(G))
-print c, ">= X(G) >= ", max_clique[0]
+max_clique = max_clique_approx(G)
+print max_clique
+print c, ">= X(G) >= ", len(max_clique)
 # Fix entries in clique.
-# c = n
 Z_rows = []
 clique_counter = 0
 for i in range(n):
-    if i in max_clique[1]:
+    if i in max_clique:
         const = np.zeros((1,c))
         const[0, clique_counter] = 1
         Z_rows += [const]
@@ -56,17 +57,29 @@ for i in range(n):
         Z_rows += [Choose(1,c,1)]
 Z = vstack(*Z_rows)
 
-cost = sum([(j+1)*norm(Z[:,j],'inf') for j in range(c)])
+a = np.random.randn(n)
+a /= np.linalg.norm(a)
+# a = -np.ones(n)
+# Z = Partition(n, c)
+
+# cost = sum([(j+1)*norm(Z[:,j],'inf') for j in range(c)])
+cost = sum([norm(Z[:,j],'inf') for j in range(c)])
 constraints = [Z[i,:] + Z[j,:] <= 1 for i,j in G.edges()]
+cost += sum_entries(neg(diff((a.T*Z[:,clique_counter:]).T)))
+# constraints += [diff((a.T*Z).T) >= 0]
+# for i in range(c-1):
+#     constraints += [a.T*Z[:,i] <= a.T*Z[:,i+1]]
+
 prob = Problem(Minimize(cost), constraints)
 
-RESTARTS = 5
+RESTARTS = 10
 MAX_ITER = 50
 # print prob.solve(method="relax_and_round")
 
-prob.solve(method="admm", max_iter=MAX_ITER, random=True,
-           rho=np.random.uniform(5, 10, size=RESTARTS), seed=1,
-           restarts=RESTARTS, polish_best=False)
+prob.solve(method="admm", max_iter=MAX_ITER, random=True, seed=1,
+           rho=np.random.uniform(0, 1, size=RESTARTS),
+           restarts=RESTARTS, polish_best=False,
+           show_progress=True, parallel=True)
 print sum([norm(Z[:,j],'inf') for j in range(c)]).value
 
 import matplotlib.pyplot as plt

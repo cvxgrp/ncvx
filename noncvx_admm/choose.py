@@ -42,8 +42,6 @@ class Choose(Boolean):
         result = np.zeros(self.size)
         for ind in v_ind[0:self.k]:
             result[ind] = 1
-        for ind in v_ind[self.k:]:
-            result[ind] = 0
         return result
 
     # In the relaxation, we have 0 <= var <= 1.

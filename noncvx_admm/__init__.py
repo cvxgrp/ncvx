@@ -25,6 +25,7 @@ from .choose import Choose
 from .extr_ball import ExtrBall
 from .integer import Integer
 from .orthog import Orthog
+from .partition import Partition
 from .rank import Rank
 from .sphere import Sphere
 from .soc_boundary import SOCBound

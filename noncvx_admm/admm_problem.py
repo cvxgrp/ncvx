@@ -58,13 +58,14 @@ def get_constr_error(constr):
     return cvx.sum_entries(error)
 
 def admm_inner_iter(data):
-    (idx, orig_prob, rho_val, gamma, max_iter,
+    (idx, orig_prob, rho_val, gamma_merit, max_iter,
     random_z, polish_best, seed, sigma, show_progress, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
     np.random.seed(idx + seed)
     random.seed(idx + seed)
     # Augmented objective.
+    gamma = cvx.Parameter(sign="positive")
     aug_obj = orig_prob.objective.args[0]
     for constr in orig_prob.constraints:
         aug_obj += gamma*get_constr_error(constr)
@@ -87,6 +88,7 @@ def admm_inner_iter(data):
     best_so_far = [np.inf, {}]
     # ADMM loop
     for k in range(max_iter):
+        gamma.value = gamma_merit#min((1.1**k), gamma_merit)
         try:
             prob.solve(*args, **kwargs)
             # print "post solve cost", idx, k, orig_prob.objective.value
@@ -124,6 +126,7 @@ def admm_inner_iter(data):
                     else:
                         var.value = old_vars[var.id]
 
+            gamma.value = gamma_merit
             merit = aug_obj.value
             # for constr in orig_prob.constraints:
             #     if cvx.sum_entries(constr.violation).value > 1e-1:
@@ -208,13 +211,18 @@ def is_better(noncvx_inf, opt_val, best_so_far, error):
     return (inf_diff > error) or \
            (abs(inf_diff) <= error and opt_val < best_so_far[1])
 
-def relax_project_polish(self, *args, **kwargs):
+def relax_project_polish(self, gamma=1e6, *args, **kwargs):
     """Solve the relaxation, then project and polish.
     """
-    self.solve(*args, **kwargs)
-    for var in get_noncvx_vars(self):
+    # Augment problem.
+    aug_obj = self.objective.args[0]
+    for constr in self.constraints:
+        aug_obj += gamma*get_constr_error(constr)
+    aug_prob = cvx.Problem(cvx.Minimize(aug_obj))
+    aug_prob.solve(*args, **kwargs)
+    for var in get_noncvx_vars(aug_prob):
         var.z.value = var.project(var.value)
-    return polish(self, *args, **kwargs)
+    return polish(aug_prob, *args, **kwargs)
 
 def repeated_rr(self, tau_init=1, tau_max=250, delta=1.1, max_iter=10,
                 random=False, abs_eps=1e-4, rel_eps=1e-4, *args, **kwargs):
