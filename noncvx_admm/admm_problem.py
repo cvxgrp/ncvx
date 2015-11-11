@@ -186,8 +186,7 @@ def admm(self, rho=None, max_iter=50, restarts=5,
     for var in self.variables():
         var.value = best_so_far[1][var.id]
 
-    self._value = self.objective.value
-    return self._value
+    return best_so_far[0]
 
 def total_dist(noncvx_vars):
     """Get the total distance from the noncvx_var values
@@ -211,7 +210,7 @@ def is_better(noncvx_inf, opt_val, best_so_far, error):
     return (inf_diff > error) or \
            (abs(inf_diff) <= error and opt_val < best_so_far[1])
 
-def relax_project_polish(self, gamma=1e6, *args, **kwargs):
+def relax_project_polish(self, gamma=1e4, samples=10, sigma=1, *args, **kwargs):
     """Solve the relaxation, then project and polish.
     """
     # Augment problem.
@@ -220,9 +219,25 @@ def relax_project_polish(self, gamma=1e6, *args, **kwargs):
         aug_obj += gamma*get_constr_error(constr)
     aug_prob = cvx.Problem(cvx.Minimize(aug_obj))
     aug_prob.solve(*args, **kwargs)
-    for var in get_noncvx_vars(aug_prob):
-        var.z.value = var.project(var.value)
-    return polish(aug_prob, *args, **kwargs)
+
+    # Randomized projections.
+    best_so_far = [np.inf, {}]
+    for k in range(samples):
+        for var in get_noncvx_vars(aug_prob):
+            if k == 0:
+                var.z.value = var.project(var.value)
+            else:
+                w = np.random.normal(0, sigma, size=var.size)
+                var.z.value = var.project(var.value + w)
+            merit, status = polish(aug_prob, *args, **kwargs)
+            if merit < best_so_far[0]:
+                best_so_far[0] = merit
+                best_so_far[1] = {v.id:v.value for v in aug_prob.variables()}
+    # Unpack result.
+    for var in self.variables():
+        var.value = best_so_far[1][var.id]
+
+    return best_so_far[0]
 
 def repeated_rr(self, tau_init=1, tau_max=250, delta=1.1, max_iter=10,
                 random=False, abs_eps=1e-4, rel_eps=1e-4, *args, **kwargs):
