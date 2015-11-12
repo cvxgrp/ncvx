@@ -125,6 +125,10 @@ def admm_inner_iter(data):
                     else:
                         var.value = old_vars[var.id]
 
+            for var in orig_prob.variables():
+                if isinstance(var, NonCvxVariable):
+                    var.z.value = var.value
+
             gamma.value = gamma_merit
             merit = merit_func.value
             # for constr in orig_prob.constraints:

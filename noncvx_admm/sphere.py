@@ -52,4 +52,4 @@ class Sphere(NonCvxVariable):
     def canonicalize(self):
         obj, constr = super(Sphere, self).canonicalize()
         one = lu.create_const(1, (1, 1))
-        return (obj, constr + [SOC(one, obj)])
+        return (obj, constr + [SOC(one, [obj])])

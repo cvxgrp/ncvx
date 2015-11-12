@@ -1,44 +1,104 @@
 from __future__ import division
-from cvxpy import *
-from noncvx_admm import *
-import numpy as np
+import cvxpy as cp, numpy as np, cvxopt, matplotlib.pyplot as plt, pickle
+import noncvx_admm as ncvx
 
-N = 4
-# Differences
-Y_list = [ExtrBall(2) for i in range(N-1)]
-Y = hstack(*Y_list)
-# Positions.
-X_list = [np.array([0,0])]
-for i in range(1,N):
-    X_list += [Y[:,i-1] + X_list[-1]]
-X = hstack(*X_list)
+N = 3 # number of circles
+np.random.seed(0)
 
-min_x0 = min_entries(X[0,:]) - 0.5
-max_x0 = max_entries(X[0,:]) + 0.5
-l_x0 = max_x0 - min_x0
-min_x1 = min_entries(X[1,:]) - 0.5
-max_x1 = max_entries(X[1,:]) + 0.5
-l_x1 = max_x1 - min_x1
-l = max_elemwise(l_x0, l_x1)
+#define variables.
+x_vals = [cp.Variable() for i in range(N)]
+y_vals = [cp.Variable() for i in range(N)]
 
-prob = Problem(Minimize(l))
+# # Initialize values.
+# for i in range(N):
+#     x_vals[i].value = np.random.uniform()
+#     y_vals[i].value = np.random.uniform()
 
-RESTARTS = 2
-ITERS = 1
-result = prob.solve(method="admm", max_iter=ITERS,
-                    restarts=RESTARTS, random=True)
+# # Get distances.
+# min_dist = np.inf
+# for i in range(N):
+#     for j in range(i+1,N):
+#         diff = cp.vstack(x_vals[i] - x_vals[j],
+#                          y_vals[i] - y_vals[j])
+#         dist = cp.norm(diff).value
+#         min_dist = min(min_dist, dist)
+# # Spread out so further apart.
+# for i in range(N):
+#     x_vals[i].value /= min_dist
+#     y_vals[i].value /= min_dist
+
+l = cp.max_elemwise( *(x_vals + y_vals) ) + 0.5
+objective = cp.Minimize(l)
+constraints = []
+for i in xrange(N):
+    constraints  += [0.5 <= x_vals[i],
+                     0.5 <= y_vals[i]]
+soc_bound_vars = []
+for i in xrange(N-1):
+    for j in xrange(i+1,N):
+        t = cp.Variable()
+        soc_bound_vars.append(ncvx.Annulus(2, 1, N))
+        constraints += [
+            cp.vstack(x_vals[i] - x_vals[j],
+                      y_vals[i] - y_vals[j]) == soc_bound_vars[-1],
+            ]
+
+# # Symmetry breaking constraints
+# for i in range(N-1):
+#     constraints += [x_vals[i] + y_vals[i] <= x_vals[i+1] + y_vals[i+1]]
+# for i in range(1,N-1):
+#     constraints += [(np.sqrt(np.pi*i) - 1)/2 <= (x_vals[i+1] + y_vals[i+1])/np.sqrt(2)]
+#     constraints += [(x_vals[i+1] + y_vals[i+1])/np.sqrt(2) <= np.sqrt(np.pi*i/2 + 2)]
+prob = cp.Problem(objective, constraints)
+
+# Initialize args.
+
+# for var in cvx_prob.variables():
+#     var.value = l*np.random.uniform()
+# r.value = 1
+# for i in range(N):
+#     x_vals[i].value = 5*i#p_c[0,i]
+#     y_vals[i].value = 5*i#p_c[1,i]
+
+# for iteration in xrange(max_iter):
+RESTARTS = 5
+ITERS = 50
+result = prob.solve(method="admm", max_iter=ITERS, random=True, seed=1,
+           # rho=np.random.uniform(5, 10, size=RESTARTS),
+           restarts=RESTARTS, polish_best=True,
+           show_progress=True)
 print result
+print "bounding box dim = ", l.value
+print "circle diameter = ", 1/l.value
+print "circle radius = ", 1/(2*l.value)
+# for var in soc_bound_vars:
+#     print var.value
+# #solver error detected
+# if(result == 'solver_error'):
+#     break
 
-x_border = [min_x0.value, max_x0.value, max_x0.value,
-            min_x0.value, min_x0.value]
-y_border = [min_x1.value, min_x1.value, max_x1.value,
-            max_x1.value, min_x1.value]
+# #Plotting Code
+# #determine if constraints are violated, and if they are indicate that a circle should be red
+# colors = [0]*N;
+# for i in xrange(N-1):
+#     if(slack_new.value[0,i] > delta or slack_new.value[0,N+i] > delta or slack_new.value[1,i] > delta or slack_new.value[1,N+i] > delta):
+#         colors[i] = 1
+#     for j in xrange(i+1,N):
+#         if(slack.value[((N-1)+(N-i))*i/2+j-i-1] > 1e-3):
+#             colors[i] = 1
+#             colors[j] = 1
+
+
+# variables for plotting.
+pi = np.pi
+circ = np.linspace(0,2*pi)
+x_border = [0, l.value, l.value, 0, 0]
+y_border = [0, 0, l.value, l.value, 0]
+
 
 #plot the circles
-circ = np.linspace(0,2*np.pi)
-import matplotlib.pyplot as plt
 for i in xrange(N):
-    plt.plot(X[0,i].value+0.5*np.cos(circ),X[1,i].value+0.5*np.sin(circ),'b')
+    plt.plot(x_vals[i].value+0.5*np.cos(circ),y_vals[i].value+0.5*np.sin(circ),'b')
     # if(colors[i] == 0):
     #     plt.plot(p.value[0,i]+r.value*np.cos(circ),p.value[1,i]+r.value*np.sin(circ),'b')
     # else:
@@ -49,3 +109,9 @@ plt.axes().set_aspect('equal')
     # plt.title(title)
     # display.clear_output()
 plt.show();
+    # # p_c = p.value
+    # # r_c = r.value
+    # Tau = min(Tau*Tau_inc,Tau_max)
+    # if (np.abs(prev_val-result) <= delta and (sum(slacks).value < delta or Tau == Tau_max)):
+    #         break
+    # prev_val = result

@@ -31,12 +31,6 @@ class NonCvxVariable(cvxpy.Variable):
         self.u = cvxpy.Parameter(*self.size)
         self.u.value = np.zeros(self.size)
 
-    @abc.abstractmethod
-    def init_z(self, random):
-        """Initializes the value of the replicant variable.
-        """
-        return NotImplemented
-
     def init_u(self, random=False):
         """Initializes the value of the dual variable.
         """

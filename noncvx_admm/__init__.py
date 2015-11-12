@@ -18,6 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import admm_problem
+from .annulus import Annulus
 from .assign import Assign
 from .boolean import Boolean
 from .card import Card
