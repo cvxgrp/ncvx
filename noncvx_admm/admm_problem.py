@@ -66,15 +66,14 @@ def admm_inner_iter(data):
     random.seed(idx + seed)
     # Augmented objective.
     gamma = cvx.Parameter(sign="positive")
-    aug_obj = orig_prob.objective.args[0]
+    merit_func = orig_prob.objective.args[0]
     for constr in orig_prob.constraints:
-        aug_obj += gamma*get_constr_error(constr)
-    aug_prob = cvx.Problem(cvx.Minimize(aug_obj))
+        merit_func += gamma*get_constr_error(constr)
     # Form ADMM problem.
-    obj = aug_obj
+    obj = orig_prob.objective.args[0]
     for var in noncvx_vars:
         obj += (rho_val/2)*cvx.sum_squares(var - var.z + var.u)
-    prob = cvx.Problem(cvx.Minimize(obj))
+    prob = cvx.Problem(cvx.Minimize(obj), orig_prob.constraints)
 
     for var in noncvx_vars:
         # var.init_z(random=random_z)
@@ -127,7 +126,7 @@ def admm_inner_iter(data):
                         var.value = old_vars[var.id]
 
             gamma.value = gamma_merit
-            merit = aug_obj.value
+            merit = merit_func.value
             # for constr in orig_prob.constraints:
             #     if cvx.sum_entries(constr.violation).value > 1e-1:
             #         merit += gamma*cvx.sum_entries(constr.violation).value
@@ -186,7 +185,11 @@ def admm(self, rho=None, max_iter=50, restarts=5,
     for var in self.variables():
         var.value = best_so_far[1][var.id]
 
-    return best_so_far[0]
+    residual = 0
+    for constr in self.constraints:
+        residual += get_constr_error(constr)
+
+    return self.objective.value, residual.value
 
 def total_dist(noncvx_vars):
     """Get the total distance from the noncvx_var values
@@ -214,30 +217,42 @@ def relax_project_polish(self, gamma=1e4, samples=10, sigma=1, *args, **kwargs):
     """Solve the relaxation, then project and polish.
     """
     # Augment problem.
-    aug_obj = self.objective.args[0]
+    residual = 0
     for constr in self.constraints:
-        aug_obj += gamma*get_constr_error(constr)
-    aug_prob = cvx.Problem(cvx.Minimize(aug_obj))
-    aug_prob.solve(*args, **kwargs)
-
+        residual += get_constr_error(constr)
+    merit_func = self.objective.args[0] + gamma*residual
+    merit_prob = cvx.Problem(cvx.Minimize(merit_func))
+    # solve relaxation.
+    self.solve(*args, **kwargs)
+    # Save variable values.
+    relaxed_values = {v.id:v.value for v in self.variables()}
     # Randomized projections.
     best_so_far = [np.inf, {}]
     for k in range(samples):
-        for var in get_noncvx_vars(aug_prob):
+        for var in get_noncvx_vars(self):
+            var_value = relaxed_values[var.id]
             if k == 0:
-                var.z.value = var.project(var.value)
+                var.z.value = var.project(var_value)
             else:
                 w = np.random.normal(0, sigma, size=var.size)
-                var.z.value = var.project(var.value + w)
-            merit, status = polish(aug_prob, *args, **kwargs)
+                var.z.value = var.project(var_value + w)
+            obj_value, status = polish(self, *args, **kwargs)
+            if status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+                # Undo change in var.value.
+                for var in self.variables():
+                    if isinstance(var, NonCvxVariable):
+                        var.value = var.z.value
+                    else:
+                        var.value = relaxed_values[var.id]
+            merit = merit_func.value
             if merit < best_so_far[0]:
                 best_so_far[0] = merit
-                best_so_far[1] = {v.id:v.value for v in aug_prob.variables()}
+                best_so_far[1] = {v.id:v.value for v in self.variables()}
     # Unpack result.
     for var in self.variables():
         var.value = best_so_far[1][var.id]
 
-    return best_so_far[0]
+    return self.objective.value, residual.value
 
 def repeated_rr(self, tau_init=1, tau_max=250, delta=1.1, max_iter=10,
                 random=False, abs_eps=1e-4, rel_eps=1e-4, *args, **kwargs):

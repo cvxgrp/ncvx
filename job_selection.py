@@ -35,19 +35,20 @@ gamma = 1
 z = Integer(n)
 cost = c.T*z #+ gamma*sum_entries(pos(A*z - b))
 prob = Problem(Minimize(-cost), [z <= a, z >= 0, A*z <= b])
-val = prob.solve(method="relax_project_polish", gamma=1000)
-if val < np.inf:
+val, resid = prob.solve(method="relax_project_polish", gamma=1000, verbose=False)
+if resid < 1e-3:
     print "relax and round value", -val
 else:
-    print "relax and round failed"
+    print "relax and round failed, residual = ", resid
 
 
 RESTARTS = 10
 ITERS = 100
-val = prob.solve(method="admm", restarts=RESTARTS,
+val, resid = prob.solve(method="admm", restarts=RESTARTS,
            rho=np.random.uniform(0,5,size=RESTARTS),
            max_iter=ITERS, random=True, sigma=1, solver=ECOS, gamma=1000)
-print "ADMM value", val
+assert resid < 1e-3
+print "ADMM value", -val
 # print prob.constraints[0].violation.sum()
 
 z = Int(n)
