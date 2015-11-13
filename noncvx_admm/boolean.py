@@ -19,6 +19,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 
 from .noncvx_variable import NonCvxVariable
 import cvxpy.lin_ops.lin_utils as lu
+from cvxpy import norm
 import numpy as np
 
 class Boolean(NonCvxVariable):
@@ -36,7 +37,8 @@ class Boolean(NonCvxVariable):
 
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
-        return [self == matrix]
+        # return [self == matrix]
+        return [norm(self - matrix, 1) <= 1]
 
     # In the relaxation, we have 0 <= var <= 1.
     def canonicalize(self):

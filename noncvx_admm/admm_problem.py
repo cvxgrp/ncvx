@@ -59,7 +59,8 @@ def get_constr_error(constr):
 
 def admm_inner_iter(data):
     (idx, orig_prob, rho_val, gamma_merit, max_iter,
-    random_z, polish_best, seed, sigma, show_progress, args, kwargs) = data
+    random_z, polish_best, seed, sigma, show_progress,
+    prox_polished, num_proj, annealing_rate, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
     np.random.seed(idx + seed)
@@ -94,51 +95,63 @@ def admm_inner_iter(data):
         except cvx.SolverError, e:
             pass
         if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-            # print rho_val, k, best_so_far[0]
-            for var in noncvx_vars:
-                # if isinstance(var, Boolean):
-                #     var.z.value = np.random.uniform(size=var.size) < var.value + var.u.value
-                # else:
-                var.z.value = var.project(var.value + var.u.value)
-                # var.z.value = var.project(var.value + var.u.value + \
-                #     np.random.normal(scale=sigma, size=var.size))
-                var.u.value += var.value - var.z.value
-                # if k == 0:
-                #     print outer_iter
-                #     print var.value
-                #     print var.z.value
             old_vars = {var.id:var.value for var in orig_prob.variables()}
-            if polish_best:
-                # Try to polish.
-                try:
-                    polish_opt_val, status = polish(orig_prob, *args, **kwargs)
-                    # print "post polish cost", idx, k, orig_prob.objective.value
-                except cvx.SolverError, e:
-                    polish_opt_val = None
-                    status = cvx.SOLVER_ERROR
-            # print "polish_opt_val", polish_opt_val
-            if not polish_best or status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-                # Undo change in var.value.
+
+            best_polished = [np.inf, {}]
+            for inner_k in range(num_proj):
                 for var in orig_prob.variables():
-                    if isinstance(var, NonCvxVariable):
-                        var.value = var.z.value
+                    var.value = old_vars[var.id]
+                # print rho_val, k, best_so_far[0]
+                for var in noncvx_vars:
+                    # if isinstance(var, Boolean):
+                    #     var.z.value = np.random.uniform(size=var.size) < var.value + var.u.value
+                    # else:
+                    if inner_k == 0:
+                        var.z.value = var.project(var.value + var.u.value)
                     else:
-                        var.value = old_vars[var.id]
+                        # var.z.value = var.project(var.value + var.u.value + \
+                        #     np.random.uniform(-.5, .5, size=var.size))#*((k+1)**-annealing_rate))
+                        var.z.value = var.project(var.value + var.u.value + \
+                            np.random.normal(scale=sigma, size=var.size))
+
+
+                if polish_best:
+                    # Try to polish.
+                    try:
+                        polish_opt_val, status = polish(orig_prob, *args, **kwargs)
+                        # print "post polish cost", idx, k, orig_prob.objective.value
+                    except cvx.SolverError, e:
+                        polish_opt_val = None
+                        status = cvx.SOLVER_ERROR
+                # print "polish_opt_val", polish_opt_val
+                if not polish_best or status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+                    # Undo change in var.value.
+                    for var in orig_prob.variables():
+                        if isinstance(var, NonCvxVariable):
+                            var.value = var.z.value
+                        else:
+                            var.value = old_vars[var.id]
+
+                gamma.value = gamma_merit
+                merit = merit_func.value
+                # for constr in orig_prob.constraints:
+                #     if cvx.sum_entries(constr.violation).value > 1e-1:
+                #         merit += gamma*cvx.sum_entries(constr.violation).value
+                if show_progress and idx == 0 and inner_k == 0:
+                    print "objective", idx, k, merit
+                if merit <= best_polished[0]:
+                    # if show_progress and idx == 0:
+                    #     print "best polished at iter ", inner_k
+                    best_polished[0] = merit
+                    best_polished[1] = {v.id:v.value for v in prob.variables()}
+                    if merit <= best_so_far[0]:
+                        best_so_far[0] = merit
+                        best_so_far[1] = best_polished[1]
 
             for var in orig_prob.variables():
                 if isinstance(var, NonCvxVariable):
-                    var.z.value = var.value
-
-            gamma.value = gamma_merit
-            merit = merit_func.value
-            # for constr in orig_prob.constraints:
-            #     if cvx.sum_entries(constr.violation).value > 1e-1:
-            #         merit += gamma*cvx.sum_entries(constr.violation).value
-            if show_progress:
-                print "objective", idx, k, merit
-            if merit <= best_so_far[0]:
-                best_so_far[0] = merit
-                best_so_far[1] = {v.id:v.value for v in prob.variables()}
+                    var.z.value = best_polished[1][var.id]
+                    var.u.value += old_vars[var.id] - var.z.value
 
             # # Restore variable values.
             # for var in noncvx_vars:
@@ -154,6 +167,7 @@ def admm_inner_iter(data):
 def admm(self, rho=None, max_iter=50, restarts=5,
          random=False, sigma=1.0, gamma=1e6, polish_best=True,
          num_procs=None, parallel=True, seed=1, show_progress=False,
+         prox_polished=False, num_proj=1, annealing_rate=0.05,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -174,13 +188,15 @@ def admm(self, rho=None, max_iter=50, restarts=5,
         tmp_prob = cvx.Problem(self.objective, self.constraints)
         best_per_rho = pool.map(admm_inner_iter,
             [(idx, tmp_prob, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, show_progress, args, kwargs) for idx, rho_val in enumerate(rho)])
+              random, polish_best, seed, sigma, show_progress,
+              prox_polished, num_proj, annealing_rate, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:
         best_per_rho = map(admm_inner_iter,
             [(idx, self, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, show_progress, args, kwargs) for idx, rho_val in enumerate(rho)])
+              random, polish_best, seed, sigma, show_progress,
+              prox_polished, num_proj, annealing_rate, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]
@@ -189,7 +205,7 @@ def admm(self, rho=None, max_iter=50, restarts=5,
     for var in self.variables():
         var.value = best_so_far[1][var.id]
 
-    residual = 0
+    residual = cvx.Constant(0)
     for constr in self.constraints:
         residual += get_constr_error(constr)
 
@@ -221,7 +237,7 @@ def relax_project_polish(self, gamma=1e4, samples=10, sigma=1, *args, **kwargs):
     """Solve the relaxation, then project and polish.
     """
     # Augment problem.
-    residual = 0
+    residual = cvx.Constant(0)
     for constr in self.constraints:
         residual += get_constr_error(constr)
     merit_func = self.objective.args[0] + gamma*residual
@@ -353,23 +369,26 @@ def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
 def get_noncvx_vars(prob):
     return [var for var in prob.variables() if getattr(var, "noncvx", False)]
 
-
-def polish(prob, *args, **kwargs):
+def polish(orig_prob, *args, **kwargs):
+    # TODO not descending right.
     # Fix noncvx variables and solve.
+    for var in get_noncvx_vars(orig_prob):
+        var.value = var.z.value
     old_val = None
     while True:
         fix_constr = []
-        for var in get_noncvx_vars(prob):
-            fix_constr += var.restrict(var.z.value)
-        prob = cvx.Problem(prob.objective, prob.constraints + fix_constr)
-        prob.solve(*args, **kwargs)
-        # print "polishing iterate", prob.value
-        if old_val is None or (old_val - prob.value)/old_val > 1e-2:
-            old_val = prob.value
+        for var in get_noncvx_vars(orig_prob):
+            fix_constr += var.restrict(var.value)
+        polish_prob = cvx.Problem(orig_prob.objective, orig_prob.constraints + fix_constr)
+        polish_prob.solve(*args, **kwargs)
+        # print "polishing iterate", polish_prob.value
+        if polish_prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE] and \
+        (old_val is None or (old_val - polish_prob.value)/(old_val + 1) > 1e-3):
+            old_val = polish_prob.value
         else:
             break
 
-    return prob.value, prob.status
+    return polish_prob.value, polish_prob.status
 
 # Add admm method to cvx Problem.
 cvx.Problem.register_solve("admm_basic", admm_basic)

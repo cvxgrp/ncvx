@@ -33,22 +33,33 @@ b = A.dot(z_true)
 gamma = 1
 
 z = Integer(n)
+penalty = 0
+# z = 0
+# for i in range(3):
+#     bool_z = Annulus(n, np.sqrt(n), n)
+#     z += (2**i)*(bool_z+1)/2
+#     penalty += 1000*(norm(bool_z, 'inf') - 1)
+
 cost = c.T*z #+ gamma*sum_entries(pos(A*z - b))
-prob = Problem(Minimize(-cost), [z <= a, z >= 0, A*z <= b])
-val, resid = prob.solve(method="relax_project_polish", gamma=1000, verbose=False)
-if resid < 1e-3:
-    print "relax and round value", -val
-else:
-    print "relax and round failed, residual = ", resid
+prob = Problem(Minimize(-cost + penalty), [z <= a, z >= 0, A*z <= b])
+# val, resid = prob.solve(method="relax_project_polish", gamma=1000, verbose=False)
+# if resid < 1e-3:
+#     print "relax and round value", -val
+# else:
+#     print "relax and round failed, residual = ", resid
 
 
-RESTARTS = 10
+RESTARTS = 8
 ITERS = 100
-val, resid = prob.solve(method="admm", restarts=RESTARTS,
-           rho=np.random.uniform(0,5,size=RESTARTS),
-           max_iter=ITERS, random=True, sigma=1, solver=ECOS, gamma=1000)
+val, resid = prob.solve(method="admm", restarts=RESTARTS, show_progress=True,
+           rho=np.random.uniform(0,2,size=RESTARTS), polish_best=False,
+           # rho=RESTARTS*[0],
+           num_proj=10,
+           max_iter=ITERS, random=True, sigma=0.1, solver=ECOS, gamma=1e6)
+print "ADMM value", cost.value
+print "ADMM resid", resid
 assert resid < 1e-3
-print "ADMM value", -val
+print norm(z - np.round(z.value)).value
 # print prob.constraints[0].violation.sum()
 
 z = Int(n)

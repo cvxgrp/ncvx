@@ -54,6 +54,7 @@ class Rank(NonCvxVariable):
 
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
+        # TODO is this really working?
         if self.symmetric:
             w, V = np.linalg.eigh(matrix)
             w_sorted_idxs = np.argsort(-w)

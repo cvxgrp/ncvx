@@ -11,7 +11,7 @@ EPSILON = 1e-8
 
 # Randomly generate a feasible 3-SAT problem.
 VARIABLES = 100
-CLAUSES_PER_VARIABLE = 4.2
+CLAUSES_PER_VARIABLE = 4.5
 CLAUSES = int(VARIABLES*CLAUSES_PER_VARIABLE)
 
 while True:
@@ -34,25 +34,43 @@ while True:
     if prob.status != INFEASIBLE:
         break
 
-# WEIRD. only works if rho varies.
-x = Boolean(VARIABLES)
-prob = Problem(Minimize(sum_entries(pos(A*x - b))))
-# prob = Problem(Minimize(0), [A*x <= b])
+# Try again.
+x = Annulus(VARIABLES, np.sqrt(VARIABLES), VARIABLES)
+zn_x = (x + 1)/2
+prob = Problem(Minimize(norm(x, 'inf')), [A*zn_x <= b])
+
 RESTARTS = 10
-ITERS = 100
+ITERS = 50
 result = prob.solve(method="admm", restarts=RESTARTS,
                     # rho=RESTARTS*[10],
-                    rho=np.random.uniform(0,2,size=RESTARTS),
-                    num_proj=10,
+                    num_proj=1,
+                    rho=np.random.uniform(0.5, 5, size=RESTARTS),
+                    parallel=True,
                     max_iter=ITERS, solver=ECOS, random=True,
-                    polish_best=False, sigma=1, show_progress=True)
+                    prox_polished=True,
+                    polish_best=True, sigma=1, show_progress=True)
+satisfied = (A*np.round(zn_x.value) <= b).sum()
+percent_satisfied = 100*satisfied/CLAUSES
+print "%s%% of the clauses were satisfied." % percent_satisfied
+
+
+# WEIRD. only works if rho varies.
+x = Boolean(VARIABLES)
+prob = Problem(Minimize(0), [A*x <= b])
+RESTARTS = 10
+ITERS = 50
+result = prob.solve(method="admm", restarts=RESTARTS,
+                    # rho=RESTARTS*[10],
+                    num_proj=1,
+                    max_iter=ITERS, solver=ECOS, random=True,
+                    polish_best=False, sigma=1)
 
 satisfied = (A*x.value <= b).sum()
 percent_satisfied = 100*satisfied/CLAUSES
 print "%s%% of the clauses were satisfied." % percent_satisfied
 
 
-# print prob.solve(method="relax_and_round")
+print prob.solve(method="relax_project_polish")
 # satisfied = (A*x.value <= b).sum()
 # percent_satisfied = 100*satisfied/CLAUSES
 # print "%s%% of the clauses were satisfied." % percent_satisfied

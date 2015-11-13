@@ -2,7 +2,7 @@ from __future__ import division
 import cvxpy as cp, numpy as np, cvxopt, matplotlib.pyplot as plt, pickle
 import noncvx_admm as ncvx
 
-N = 3 # number of circles
+N = 50 # number of circles
 np.random.seed(0)
 
 #define variables.
@@ -62,15 +62,17 @@ prob = cp.Problem(objective, constraints)
 
 # for iteration in xrange(max_iter):
 RESTARTS = 5
-ITERS = 50
+ITERS = 10
 result = prob.solve(method="admm", max_iter=ITERS, random=True, seed=1,
-           # rho=np.random.uniform(5, 10, size=RESTARTS),
-           restarts=RESTARTS, polish_best=True,
-           show_progress=True)
+           rho=np.random.uniform(0, 5, size=RESTARTS),
+           num_proj=1,
+           restarts=RESTARTS, polish_best=True, prox_polished=True,
+           show_progress=True, parallel=True, verbose=False)
 print result
 print "bounding box dim = ", l.value
 print "circle diameter = ", 1/l.value
 print "circle radius = ", 1/(2*l.value)
+print "percent coverage = ", N*np.pi*0.25/cp.square(l).value
 # for var in soc_bound_vars:
 #     print var.value
 # #solver error detected

@@ -8,13 +8,14 @@ import random
 np.random.seed(1)
 random.seed(1)
 
-n = 12
+n = 10
 k = n//2
 SNR = 20
 SCALE = 1
 F = np.random.randn(n, k)*SCALE
-D_true = np.random.chisquare(1, size=(n, 1))*SCALE
-Sigma_true = F.dot(F.T) + np.diag(D_true)
+D_true = np.random.chisquare(1, size=(n))*SCALE
+Sigma_lr_true = F.dot(F.T)
+Sigma_true = Sigma_lr_true + np.diag(D_true)
 
 
 variance = norm(Sigma_true, 'fro').value/(np.sqrt(n*n)*SNR)
@@ -38,20 +39,21 @@ D_vec = Variable(n)
 D = diag(D_vec)
 cost = sum_squares(Sigma - Sigma_lr - D)
 constraints = [D_vec >= 0, Sigma_lr == Sigma_lr.T, Sigma_lr == Semidef(n)]
+
 prob = Problem(Minimize(cost), constraints)
 prob.solve(method="relax_project_polish", solver=SCS)
 print "relax and round value", cost.value
 
 # ADMM solution.
 prob = Problem(Minimize(cost), constraints)
-RESTARTS = 5
+RESTARTS = 1
 ITERS = 50
 prob.solve(method="admm", restarts=RESTARTS,
-           rho=np.random.uniform(1,5,size=RESTARTS),
+           rho=np.random.uniform(0,5,size=RESTARTS),
            max_iter=ITERS, solver=MOSEK, random=True, sigma=1,
-           show_progress=True, parallel=True)
+           show_progress=True, parallel=True, prox_polished=True)
 print "ADMM value", cost.value
-
+assert False
 # Compare to nuclear norm.
 gamma = Parameter(sign="positive")
 # Sigma_lr = Semidef(n)
