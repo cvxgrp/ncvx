@@ -10,7 +10,7 @@ from matplotlib import colors
 np.random.seed(1)
 random.seed(1)
 
-n = 15
+n = 10
 m = (n*(n-1)//2)//5
 G1 = nx.gnm_random_graph(n, m)
 G2 = nx.gnm_random_graph(n, m)
