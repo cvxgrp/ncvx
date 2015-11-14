@@ -60,7 +60,7 @@ def get_constr_error(constr):
 def admm_inner_iter(data):
     (idx, orig_prob, rho_val, gamma_merit, max_iter,
     random_z, polish_best, seed, sigma, show_progress,
-    prox_polished, num_proj, annealing_rate, args, kwargs) = data
+    prox_polished, num_proj, nu, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
     np.random.seed(idx + seed)
@@ -85,7 +85,7 @@ def admm_inner_iter(data):
             var.z.value = np.random.normal(0, sigma, var.size)
         var.u.value = np.zeros(var.size)
 
-    best_so_far = [np.inf, {}]
+    best_so_far = [np.inf, {v.id:np.zeros(v.size) for v in orig_prob.variables()}]
     # ADMM loop
     for k in range(max_iter):
         gamma.value = gamma_merit#min((1.1**k), gamma_merit)
@@ -110,9 +110,9 @@ def admm_inner_iter(data):
                         var.z.value = var.project(var.value + var.u.value)
                     else:
                         # var.z.value = var.project(var.value + var.u.value + \
-                        #     np.random.uniform(-.5, .5, size=var.size))#*((k+1)**-annealing_rate))
+                        #     np.random.uniform(-.5, .5, size=var.size))#*((k+1)**-nu))
                         var.z.value = var.project(var.value + var.u.value + \
-                            np.random.normal(scale=sigma, size=var.size))
+                            np.random.normal(scale=nu, size=var.size))
 
 
                 if polish_best:
@@ -139,18 +139,19 @@ def admm_inner_iter(data):
                 #         merit += gamma*cvx.sum_entries(constr.violation).value
                 if show_progress and idx == 0 and inner_k == 0:
                     print "objective", idx, k, merit
-                if merit <= best_polished[0]:
-                    # if show_progress and idx == 0:
-                    #     print "best polished at iter ", inner_k
+                if merit < best_polished[0]:
+                    if show_progress and idx == 0:
+                        print "best polished at iter ", inner_k
                     best_polished[0] = merit
                     best_polished[1] = {v.id:v.value for v in prob.variables()}
-                    if merit <= best_so_far[0]:
+                    if merit < best_so_far[0]:
                         best_so_far[0] = merit
                         best_so_far[1] = best_polished[1]
 
             for var in orig_prob.variables():
                 if isinstance(var, NonCvxVariable):
-                    var.z.value = best_polished[1][var.id]
+                    if prox_polished:
+                        var.z.value = best_polished[1][var.id]
                     var.u.value += old_vars[var.id] - var.z.value
 
             # # Restore variable values.
@@ -167,7 +168,7 @@ def admm_inner_iter(data):
 def admm(self, rho=None, max_iter=50, restarts=5,
          random=False, sigma=1.0, gamma=1e6, polish_best=True,
          num_procs=None, parallel=True, seed=1, show_progress=False,
-         prox_polished=False, num_proj=1, annealing_rate=0.05,
+         prox_polished=False, num_proj=1, nu=0.05,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -189,14 +190,14 @@ def admm(self, rho=None, max_iter=50, restarts=5,
         best_per_rho = pool.map(admm_inner_iter,
             [(idx, tmp_prob, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
-              prox_polished, num_proj, annealing_rate, args, kwargs) for idx, rho_val in enumerate(rho)])
+              prox_polished, num_proj, nu, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:
         best_per_rho = map(admm_inner_iter,
             [(idx, self, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
-              prox_polished, num_proj, annealing_rate, args, kwargs) for idx, rho_val in enumerate(rho)])
+              prox_polished, num_proj, nu, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]
