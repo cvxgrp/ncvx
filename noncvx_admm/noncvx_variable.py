@@ -64,6 +64,11 @@ class NonCvxVariable(cvxpy.Variable):
         matrix = self.project(matrix)
         return self._restrict(matrix)
 
+    # Wrapper to validate matrix and update curvature.
+    def neighbors(self, matrix):
+        matrix = self.project(matrix)
+        return self._neighbors(matrix)
+
     # Fix the variable so it obeys the non-convex constraint.
     @abc.abstractmethod
     def _restrict(self, matrix):

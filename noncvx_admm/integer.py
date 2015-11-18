@@ -34,3 +34,13 @@ class Integer(NonCvxVariable):
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
         return [self == matrix]
+
+    def _neighbors(self, matrix):
+        neighbors_list = []
+        for i in range(self.size[0]):
+            for j in range(self.size[1]):
+                for diff in [1,-1]:
+                    new_mat = matrix.copy()
+                    new_mat[i,j] = new_mat[i,j] + diff
+                    neighbors_list += [new_mat]
+        return neighbors_list

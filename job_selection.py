@@ -10,8 +10,8 @@ np.random.seed(1)
 # Plot relative error (true - nc-admm)/true
 # Plot merit function so relax and round can be included.
 
-m = 10
-n = 10*m
+m = 20
+n = 5*m
 k = 10
 M = 5
 c = np.random.uniform(0, 1, size=(n, 1))
@@ -32,6 +32,12 @@ b = A.dot(z_true)
 
 gamma = 1
 
+z = Int(n)
+cost = c.T*z #+ gamma*sum_entries(pos(A*z - b))
+prob = Problem(Minimize(-cost), [z <= a, z >= 0, A*z <= b])
+# prob.solve(solver=GUROBI, verbose=True, TimeLimit=10)
+print "true value", cost.value
+
 z = Integer(n)
 penalty = 0
 # z = 0
@@ -49,21 +55,16 @@ prob = Problem(Minimize(-cost + penalty), [z <= a, z >= 0, A*z <= b])
 #     print "relax and round failed, residual = ", resid
 
 
-RESTARTS = 8
-ITERS = 100
+RESTARTS = 5
+ITERS = 50
 val, resid = prob.solve(method="admm", restarts=RESTARTS, show_progress=True,
-           rho=np.random.uniform(0,2,size=RESTARTS), polish_best=False,
+           rho=np.random.uniform(0,1,size=RESTARTS), polish_best=False,
            # rho=RESTARTS*[0],
-           num_proj=10,
-           max_iter=ITERS, random=True, sigma=0.1, solver=ECOS, gamma=1e6)
+           num_proj=10, parallel=True, prox_polished=False,
+           max_iter=ITERS, random=True, sigma=1, solver=ECOS, gamma=1e6)
 print "ADMM value", cost.value
 print "ADMM resid", resid
 assert resid < 1e-3
 print norm(z - np.round(z.value)).value
 # print prob.constraints[0].violation.sum()
 
-z = Int(n)
-cost = c.T*z #+ gamma*sum_entries(pos(A*z - b))
-prob = Problem(Minimize(-cost), [z <= a, z >= 0, A*z <= b])
-prob.solve(solver=GUROBI, verbose=True, TimeLimit=10)
-print "true value", cost.value

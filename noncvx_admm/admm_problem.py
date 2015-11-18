@@ -24,6 +24,10 @@ import multiprocessing
 import cvxpy as cvx
 import numpy as np
 import random
+try:
+    from Queue import PriorityQueue
+except:
+    from queue import PriorityQueue
 
 # Use ADMM to attempt non-convex problem.
 def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
@@ -60,16 +64,16 @@ def get_constr_error(constr):
 def admm_inner_iter(data):
     (idx, orig_prob, rho_val, gamma_merit, max_iter,
     random_z, polish_best, seed, sigma, show_progress,
-    prox_polished, num_proj, nu, args, kwargs) = data
+    prox_polished, polish_depth, lower_bound, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
     np.random.seed(idx + seed)
     random.seed(idx + seed)
     # Augmented objective.
-    gamma = cvx.Parameter(sign="positive")
+    # gamma = cvx.Parameter(sign="positive")
     merit_func = orig_prob.objective.args[0]
     for constr in orig_prob.constraints:
-        merit_func += gamma*get_constr_error(constr)
+        merit_func += gamma_merit*get_constr_error(constr)
     # Form ADMM problem.
     obj = orig_prob.objective.args[0]
     for var in noncvx_vars:
@@ -86,9 +90,10 @@ def admm_inner_iter(data):
         var.u.value = np.zeros(var.size)
 
     best_so_far = [np.inf, {v.id:np.zeros(v.size) for v in orig_prob.variables()}]
+    cur_merit = best_so_far[0]
     # ADMM loop
     for k in range(max_iter):
-        gamma.value = gamma_merit#min((1.1**k), gamma_merit)
+        prev_merit = cur_merit
         try:
             prob.solve(*args, **kwargs)
             # print "post solve cost", idx, k, orig_prob.objective.value
@@ -97,24 +102,12 @@ def admm_inner_iter(data):
         if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
             old_vars = {var.id:var.value for var in orig_prob.variables()}
 
-            best_polished = [np.inf, {}]
-            for inner_k in range(num_proj):
-                for var in orig_prob.variables():
-                    var.value = old_vars[var.id]
-                # print rho_val, k, best_so_far[0]
-                for var in noncvx_vars:
-                    # if isinstance(var, Boolean):
-                    #     var.z.value = np.random.uniform(size=var.size) < var.value + var.u.value
-                    # else:
-                    if inner_k == 0:
-                        var.z.value = var.project(var.value + var.u.value)
-                    else:
-                        # var.z.value = var.project(var.value + var.u.value + \
-                        #     np.random.uniform(-.5, .5, size=var.size))#*((k+1)**-nu))
-                        var.z.value = var.project(var.value + var.u.value + \
-                            np.random.normal(scale=nu, size=var.size))
+            for var in noncvx_vars:
+                var.z.value = var.project(var.value + var.u.value)
+                # var.z.value = var.project(np.random.randn(*var.size))
+                # var.z.value = var.project(np.random.uniform(0, 1, size=var.size))
 
-
+            if True or prox_polished or k % 10 == 9:
                 if polish_best:
                     # Try to polish.
                     try:
@@ -123,40 +116,42 @@ def admm_inner_iter(data):
                     except cvx.SolverError, e:
                         polish_opt_val = None
                         status = cvx.SOLVER_ERROR
-                # print "polish_opt_val", polish_opt_val
-                if not polish_best or status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-                    # Undo change in var.value.
-                    for var in orig_prob.variables():
-                        if isinstance(var, NonCvxVariable):
-                            var.value = var.z.value
-                        else:
-                            var.value = old_vars[var.id]
 
-                gamma.value = gamma_merit
-                merit = merit_func.value
-                # for constr in orig_prob.constraints:
-                #     if cvx.sum_entries(constr.violation).value > 1e-1:
-                #         merit += gamma*cvx.sum_entries(constr.violation).value
-                if show_progress and idx == 0 and inner_k == 0:
-                    print "objective", idx, k, merit
-                if merit < best_polished[0]:
-                    if show_progress and idx == 0:
-                        print "best polished at iter ", inner_k
-                    best_polished[0] = merit
-                    best_polished[1] = {v.id:v.value for v in prob.variables()}
-                    if merit < best_so_far[0]:
-                        best_so_far[0] = merit
-                        best_so_far[1] = best_polished[1]
+                    # print "polish_opt_val", polish_opt_val
+                    if status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+                        # Undo change in var.value.
+                        for var in orig_prob.variables():
+                            if isinstance(var, NonCvxVariable):
+                                var.value = var.z.value
+                            else:
+                                var.value = old_vars[var.id]
+
+                    cur_merit = merit_func.value
+                    sltn = {v.id:v.value for v in orig_prob.variables()}
+                else:
+                    cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far, idx, polish_depth)
+
+            if show_progress and idx == 0:
+                print "objective", idx, k, cur_merit, best_so_far[0]
+            if cur_merit < best_so_far[0]:
+                best_so_far[0] = cur_merit
+                best_so_far[1] = sltn
 
             for var in orig_prob.variables():
                 if isinstance(var, NonCvxVariable):
                     if prox_polished:
-                        var.z.value = best_polished[1][var.id]
-                    var.u.value += old_vars[var.id] - var.z.value
+                        var.z.value = sltn[var.id]
+                    else:
+                        var.u.value += old_vars[var.id] - var.z.value
 
             # # Restore variable values.
             # for var in noncvx_vars:
             #     var.value = var.z.value
+
+            # Termination conditions.
+            if best_so_far[0] - lower_bound <= 1e-4:# or \
+               # abs(cur_merit - prev_merit) + abs(cur_merit - prev_merit)/(prev_merit + 1) < 1e-4:
+                return best_so_far
 
         else:
             print prob.status
@@ -164,11 +159,54 @@ def admm_inner_iter(data):
 
     return best_so_far
 
+def neighbor_search(merit_func, old_vars, global_best, idx, max_depth):
+    nonconvex_vars = get_noncvx_vars(merit_func)
+    for var in nonconvex_vars:
+        var.value = var.z.value
+    best_so_far = [merit_func.value, {v.id:v.value for v in merit_func.variables()}]
+
+    eval_queue = PriorityQueue()
+    add_neighbors(eval_queue, merit_func, best_so_far[1], old_vars, 1)
+    count = 0
+    while not eval_queue.empty():
+        merit, _, node_depth, _, sltn = eval_queue.get()
+        count += 1
+        if merit < best_so_far[0]:# and merit < global_best[0]:
+            if idx == 0:
+                print merit, count
+            best_so_far[0] = merit
+            best_so_far[1] = sltn
+            if node_depth < max_depth:
+                add_neighbors(eval_queue, merit_func, sltn, old_vars, node_depth+1)
+
+    return best_so_far
+
+def add_neighbors(eval_queue, merit_func, sltn, old_vars, depth, max_breadth=100):
+    for var in merit_func.variables():
+        var.value = sltn[var.id]
+
+    new_nodes = []
+    merit_func.value
+    for var in get_noncvx_vars(merit_func):
+        proj_val = old_vars[var.id] + var.u.value
+        for neighbor in var.neighbors(sltn[var.id]):
+            var.value = neighbor
+            new_nodes.append((merit_func.value,
+                             np.linalg.norm(proj_val - neighbor),
+                             depth,
+                             np.random.randn(),
+                             {v.id:v.value for v in merit_func.variables()}))
+            var.value = sltn[var.id]
+
+    new_nodes = sorted(new_nodes)
+    for i in range(min(max_breadth, len(new_nodes))):
+        eval_queue.put(new_nodes[i])
+
 # Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=50, restarts=5,
          random=False, sigma=1.0, gamma=1e6, polish_best=True,
          num_procs=None, parallel=True, seed=1, show_progress=False,
-         prox_polished=False, num_proj=1, nu=0.05,
+         prox_polished=False, polish_depth=5,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -180,8 +218,8 @@ def admm(self, rho=None, max_iter=50, restarts=5,
         num_procs = multiprocessing.cpu_count()
 
     # Solve the relaxation.
-    rel_val = self.solve(*args, **kwargs)
-    print "lower bound", rel_val
+    lower_bound = self.solve(*args, **kwargs)
+    print "lower bound", lower_bound
 
     # Algorithm.
     if parallel:
@@ -190,14 +228,14 @@ def admm(self, rho=None, max_iter=50, restarts=5,
         best_per_rho = pool.map(admm_inner_iter,
             [(idx, tmp_prob, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
-              prox_polished, num_proj, nu, args, kwargs) for idx, rho_val in enumerate(rho)])
+              prox_polished, polish_depth, lower_bound, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:
         best_per_rho = map(admm_inner_iter,
             [(idx, self, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
-              prox_polished, num_proj, nu, args, kwargs) for idx, rho_val in enumerate(rho)])
+              prox_polished, polish_depth, lower_bound, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]
@@ -382,6 +420,7 @@ def polish(orig_prob, *args, **kwargs):
             fix_constr += var.restrict(var.value)
         polish_prob = cvx.Problem(orig_prob.objective, orig_prob.constraints + fix_constr)
         polish_prob.solve(*args, **kwargs)
+        # break
         # print "polishing iterate", polish_prob.value
         if polish_prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE] and \
         (old_val is None or (old_val - polish_prob.value)/(old_val + 1) > 1e-3):

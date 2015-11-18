@@ -10,8 +10,8 @@ np.random.seed(1)
 EPSILON = 1e-8
 
 # Randomly generate a feasible 3-SAT problem.
-VARIABLES = 100
-CLAUSES_PER_VARIABLE = 4.2
+VARIABLES = 10
+CLAUSES_PER_VARIABLE = 4
 CLAUSES = int(VARIABLES*CLAUSES_PER_VARIABLE)
 
 while True:
@@ -36,14 +36,14 @@ while True:
 
 # WEIRD. only works if rho varies.
 x = Boolean(VARIABLES)
-prob = Problem(Minimize(sum_entries(pos(A*x - b))))
-# prob = Problem(Minimize(0), [A*x <= b])
-RESTARTS = 10
-ITERS = 100
+# prob = Problem(Minimize(sum_entries(pos(A*x - b))))
+prob = Problem(Minimize(0), [A*x <= b])
+RESTARTS = 1
+ITERS = 50
 result = prob.solve(method="admm", restarts=RESTARTS,
-                    # rho=RESTARTS*[10],
-                    rho=np.random.uniform(0,2,size=RESTARTS),
-                    num_proj=10,
+                    rho=RESTARTS*[10],
+                    # rho=np.random.uniform(0,2,size=RESTARTS),
+                    num_proj=10, parallel=False, prox_polished=False,
                     max_iter=ITERS, solver=ECOS, random=True,
                     polish_best=False, sigma=1, show_progress=True)
 

@@ -48,6 +48,37 @@ class Partition(Boolean):
         # prob.solve(solver=cvx.GUROBI, timeLimit=10)
         # return X.value
 
+    # def _neighbors(self, matrix):
+    #     neighbors_list = []
+    #     idxs = np.argmax(matrix, axis=1)
+    #     for i in range(self.size[0]):
+    #         for j in range(self.size[1]):
+    #             if j != idxs[i]:
+    #                 new_mat = matrix.copy()
+    #                 new_mat[i,j] = 1
+    #                 new_mat[i,idxs[i]] = 0
+    #                 neighbors_list += [new_mat]
+    #     return neighbors_list
+
+    def _neighbors(self, matrix):
+        neighbors_list = []
+        idxs = np.argmax(matrix, axis=1)
+        for i in range(self.size[0]):
+            for j in range(self.size[1]):
+                if j != idxs[i] and np.random.uniform() < 10.0/(self.size[0]*(self.size[1]-1)):
+                    new_mat = matrix.copy()
+                    new_mat[i,j] = 1
+                    new_mat[i,idxs[i]] = 0
+                    neighbors_list += [new_mat]
+        return neighbors_list
+
+    # def _neighbors(self, matrix):
+    #     neighbors_list = []
+    #     for i in range(25):
+    #         w = np.random.normal(0, scale=1, size=self.size)
+    #         neighbors_list.append(self._project(matrix + w))
+    #     return neighbors_list
+
     # In the relaxation, we have 0 <= var <= 1.
     def canonicalize(self):
         # HACK.

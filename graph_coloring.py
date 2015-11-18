@@ -35,8 +35,8 @@ kelly_colors_hex = [
     "#232C16", # Dark Olive Green
     ]
 
-n = 25
-m = (n*(n-1)//2)//2
+n = 50
+m = (n*(n-1)//2)//5
 G = nx.gnm_random_graph(n, m, seed=2)
 # Upper bound for chromatic number.
 c = max([G.degree(i) for i in range(n)]) + 1
@@ -94,7 +94,23 @@ Z = Partition(n, c)
 
 # cost = sum([(j+1)*norm(Z[:,j],'inf') for j in range(c)])
 cost = sum([norm(Z[:,j],'inf') for j in range(c)])
-constraints = [Z[i,:] + Z[j,:] <= 1 for i,j in G.edges()]
+
+# Make big sparse matrix for constraints.
+import scipy.sparse as sp
+V = []
+I = []
+J = []
+count = 0
+for i,j in G.edges():
+    for k in range(c):
+        V += [1.0, 1.0]
+        J += [i + k*n, j + k*n]
+        I += [count, count]
+        count += 1
+mat = sp.coo_matrix((V, (I, J)), shape=(count, n*c))
+constraints = [mat*vec(Z) <= 1]
+# constraints = [Z[i,:] + Z[j,:] <= 1 for i,j in G.edges()]
+
 cost += sum_entries(neg(diff((a.T*Z).T)))
 # constraints += [diff((a.T*Z).T) >= 0]
 # for i in range(c-1):
@@ -107,9 +123,9 @@ MAX_ITER = 50
 # print prob.solve(method="relax_and_round")
 
 prob.solve(method="admm", max_iter=MAX_ITER, random=True, seed=1,
-           rho=np.random.uniform(0, 1, size=RESTARTS),
-           restarts=RESTARTS, polish_best=False, sigma=1, nu=0.1,
-           show_progress=True, parallel=True, num_proj=1)
+           rho=np.random.uniform(0, 1, size=RESTARTS), prox_polished=False,
+           restarts=RESTARTS, polish_best=False, sigma=1, polish_depth=5,
+           show_progress=True, parallel=True)
 print sum([norm(Z[:,j],'inf') for j in range(c)]).value
 
 import matplotlib.pyplot as plt

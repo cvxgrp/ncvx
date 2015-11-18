@@ -51,7 +51,7 @@ ITERS = 50
 prob.solve(method="admm", restarts=RESTARTS,
            rho=np.random.uniform(0,5,size=RESTARTS),
            max_iter=ITERS, solver=MOSEK, random=True, sigma=1,
-           show_progress=True, parallel=True, prox_polished=True)
+           show_progress=True, parallel=True, prox_polished=False)
 print "ADMM value", cost.value
 assert False
 # Compare to nuclear norm.

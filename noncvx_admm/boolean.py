@@ -40,6 +40,15 @@ class Boolean(NonCvxVariable):
         # return [self == matrix]
         return [norm(self - matrix, 1) <= 1]
 
+    def _neighbors(self, matrix):
+        neighbors_list = []
+        for i in range(self.size[0]):
+            for j in range(self.size[1]):
+                new_mat = matrix.copy()
+                new_mat[i,j] = 1 - new_mat[i,j]
+                neighbors_list += [new_mat]
+        return neighbors_list
+
     # In the relaxation, we have 0 <= var <= 1.
     def canonicalize(self):
         obj, constraints = super(Boolean, self).canonicalize()

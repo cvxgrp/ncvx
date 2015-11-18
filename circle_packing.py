@@ -1,9 +1,10 @@
 from __future__ import division
-import cvxpy as cp, numpy as np, cvxopt, matplotlib.pyplot as plt, pickle
+import cvxpy as cp, numpy as np, cvxopt, matplotlib.pyplot as plt, pickle, random
 import noncvx_admm as ncvx
 
-N = 25 # number of circles
+N = 12 # number of circles
 np.random.seed(0)
+random.seed(0)
 
 #define variables.
 x_vals = [cp.Variable() for i in range(N)]
@@ -61,8 +62,8 @@ prob = cp.Problem(objective, constraints)
 #     y_vals[i].value = 5*i#p_c[1,i]
 
 # for iteration in xrange(max_iter):
-RESTARTS = 8
-ITERS = 50
+RESTARTS = 5
+ITERS = 10
 result = prob.solve(method="admm", max_iter=ITERS, random=True, seed=1,
            rho=np.random.uniform(0, 1, size=RESTARTS),
            num_proj=1, sigma=1,
