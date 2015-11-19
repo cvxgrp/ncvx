@@ -5,7 +5,7 @@ import numpy as np
 from scipy import linalg as LA
 
 # Traveling salesman problem.
-n = 30
+n = 50
 
 # Get locations.
 np.random.seed(2)
@@ -32,7 +32,7 @@ for i in range(n):
 
 
 
-MAX_ITER = 25
+MAX_ITER = 50
 RESTARTS = 5
 
 # True solution.
@@ -74,8 +74,8 @@ prob = Problem(Minimize(vec(D).T*vec(P)), constr)
 result = prob.solve(method="admm", max_iter=MAX_ITER, parallel=True,
                     restarts=RESTARTS, random=True, show_progress=True,
                     rho=np.random.uniform(0,1,size=RESTARTS),
-                    sigma=1.0, polish_depth=5,
-                    verbose=False, solver=MOSEK)
+                    sigma=1.0, polish_depth=50,
+                    verbose=False, solver=SCS)
 print "all constraints hold:", np.all([c.value for c in prob.constraints])
 print "final value", result
 # print barrier.value

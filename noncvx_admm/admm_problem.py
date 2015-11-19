@@ -281,7 +281,7 @@ def is_better(noncvx_inf, opt_val, best_so_far, error):
     return (inf_diff > error) or \
            (abs(inf_diff) <= error and opt_val < best_so_far[1])
 
-def relax_project_polish(self, gamma=1e4, samples=10, sigma=1, *args, **kwargs):
+def relax_project_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5, *args, **kwargs):
     """Solve the relaxation, then project and polish.
     """
     # Augment problem.
@@ -304,18 +304,34 @@ def relax_project_polish(self, gamma=1e4, samples=10, sigma=1, *args, **kwargs):
             else:
                 w = np.random.normal(0, sigma, size=var.size)
                 var.z.value = var.project(var_value + w)
-            obj_value, status = polish(self, *args, **kwargs)
+
+        old_vars = {var.id:var.value for var in self.variables()}
+        if only_discrete(self):
+            cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far, 0, polish_depth)
+        else:
+            # Try to polish.
+            try:
+                polish_opt_val, status = polish(self, *args, **kwargs)
+                # print "post polish cost", idx, k, self.objective.value
+            except cvx.SolverError, e:
+                polish_opt_val = None
+                status = cvx.SOLVER_ERROR
+
+            # print "polish_opt_val", polish_opt_val
             if status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
                 # Undo change in var.value.
                 for var in self.variables():
                     if isinstance(var, NonCvxVariable):
                         var.value = var.z.value
                     else:
-                        var.value = relaxed_values[var.id]
-            merit = merit_func.value
-            if merit < best_so_far[0]:
-                best_so_far[0] = merit
-                best_so_far[1] = {v.id:v.value for v in self.variables()}
+                        var.value = old_vars[var.id]
+
+            cur_merit = merit_func.value
+            sltn = {v.id:v.value for v in self.variables()}
+
+        if cur_merit < best_so_far[0]:
+            best_so_far[0] = cur_merit
+            best_so_far[1] = sltn
     # Unpack result.
     for var in self.variables():
         var.value = best_so_far[1][var.id]
