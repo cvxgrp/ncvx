@@ -35,8 +35,8 @@ kelly_colors_hex = [
     "#232C16", # Dark Olive Green
     ]
 
-n = 50
-m = (n*(n-1)//2)//5
+n = 25
+m = (n*(n-1)//2)//2
 G = nx.gnm_random_graph(n, m, seed=2)
 # Upper bound for chromatic number.
 c = max([G.degree(i) for i in range(n)]) + 1
@@ -118,13 +118,13 @@ cost += sum_entries(neg(diff((a.T*Z).T)))
 
 prob = Problem(Minimize(cost), constraints)
 
-RESTARTS = 5
-MAX_ITER = 50
+RESTARTS = 8
+MAX_ITER = 20
 # print prob.solve(method="relax_and_round")
 
 prob.solve(method="admm", max_iter=MAX_ITER, random=True, seed=1,
            rho=np.random.uniform(0, 1, size=RESTARTS), prox_polished=False,
-           restarts=RESTARTS, polish_best=False, sigma=1, polish_depth=5,
+           restarts=RESTARTS, sigma=1, polish_depth=100,
            show_progress=True, parallel=True)
 print sum([norm(Z[:,j],'inf') for j in range(c)]).value
 

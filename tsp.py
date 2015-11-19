@@ -5,7 +5,7 @@ import numpy as np
 from scipy import linalg as LA
 
 # Traveling salesman problem.
-n = 34
+n = 30
 
 # Get locations.
 np.random.seed(2)
@@ -32,7 +32,7 @@ for i in range(n):
 
 
 
-MAX_ITER = 75
+MAX_ITER = 25
 RESTARTS = 5
 
 # True solution.
@@ -62,7 +62,7 @@ print "true value", result
 # Edge matrix.
 # P = Assign(n, n)
 # constr = [trace(P) == 0,
-#           (P + P.T)/2 - np.ones((n,n))/n << np.cos(2*np.pi/n)*np.eye(n)]
+#           (P + P.T)/2 - 4*np.ones((n,n))/n << np.cos(2*np.pi/n)*np.eye(n)]
 # mat = (P + P.T)/2 - np.ones((n,n))/n - np.cos(2*np.pi/n)*np.eye(n)
 # barrier = pos(lambda_max(mat))
 P = Tour(n)
@@ -74,8 +74,8 @@ prob = Problem(Minimize(vec(D).T*vec(P)), constr)
 result = prob.solve(method="admm", max_iter=MAX_ITER, parallel=True,
                     restarts=RESTARTS, random=True, show_progress=True,
                     rho=np.random.uniform(0,1,size=RESTARTS),
-                    num_proj=10, sigma=1/n,
-                    verbose=False, polish_best=False, solver=MOSEK)
+                    sigma=1.0, polish_depth=5,
+                    verbose=False, solver=MOSEK)
 print "all constraints hold:", np.all([c.value for c in prob.constraints])
 print "final value", result
 # print barrier.value

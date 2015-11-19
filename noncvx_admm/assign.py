@@ -76,6 +76,18 @@ class Assign(Boolean):
     def _restrict(self, matrix):
         return [self == matrix]
 
+
+    def _neighbors(self, matrix):
+        """Neighbors swap adjacent rows.
+        """
+        neighbors_list = []
+        for i in range(self.size[0]-1):
+            new_mat = matrix.copy()
+            new_mat[i+1,:] = matrix[i,:]
+            new_mat[i,:] = matrix[i+1,:]
+            neighbors_list += [new_mat]
+        return neighbors_list
+
     # In the relaxation, we have 0 <= var <= 1.
     def canonicalize(self):
         obj, constraints = super(Assign, self).canonicalize()

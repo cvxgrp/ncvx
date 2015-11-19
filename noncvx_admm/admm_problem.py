@@ -107,29 +107,29 @@ def admm_inner_iter(data):
                 # var.z.value = var.project(np.random.randn(*var.size))
                 # var.z.value = var.project(np.random.uniform(0, 1, size=var.size))
 
-            if True or prox_polished or k % 10 == 9:
-                if polish_best:
-                    # Try to polish.
-                    try:
-                        polish_opt_val, status = polish(orig_prob, *args, **kwargs)
-                        # print "post polish cost", idx, k, orig_prob.objective.value
-                    except cvx.SolverError, e:
-                        polish_opt_val = None
-                        status = cvx.SOLVER_ERROR
 
-                    # print "polish_opt_val", polish_opt_val
-                    if status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-                        # Undo change in var.value.
-                        for var in orig_prob.variables():
-                            if isinstance(var, NonCvxVariable):
-                                var.value = var.z.value
-                            else:
-                                var.value = old_vars[var.id]
+            if only_discrete(orig_prob):
+                cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far, idx, polish_depth)
+            else:
+                # Try to polish.
+                try:
+                    polish_opt_val, status = polish(orig_prob, *args, **kwargs)
+                    # print "post polish cost", idx, k, orig_prob.objective.value
+                except cvx.SolverError, e:
+                    polish_opt_val = None
+                    status = cvx.SOLVER_ERROR
 
-                    cur_merit = merit_func.value
-                    sltn = {v.id:v.value for v in orig_prob.variables()}
-                else:
-                    cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far, idx, polish_depth)
+                # print "polish_opt_val", polish_opt_val
+                if status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+                    # Undo change in var.value.
+                    for var in orig_prob.variables():
+                        if isinstance(var, NonCvxVariable):
+                            var.value = var.z.value
+                        else:
+                            var.value = old_vars[var.id]
+
+                cur_merit = merit_func.value
+                sltn = {v.id:v.value for v in orig_prob.variables()}
 
             if show_progress and idx == 0:
                 print "objective", idx, k, cur_merit, best_so_far[0]
@@ -201,6 +201,15 @@ def add_neighbors(eval_queue, merit_func, sltn, old_vars, depth, max_breadth=100
     new_nodes = sorted(new_nodes)
     for i in range(min(max_breadth, len(new_nodes))):
         eval_queue.put(new_nodes[i])
+
+def only_discrete(prob):
+    """Does the problem only contain variables in discrete sets?
+    """
+    for var in prob.variables():
+        if not isinstance(var, NonCvxVariable) or not hasattr(var, "_neighbors"):
+            return False
+
+    return True
 
 # Use ADMM to attempt non-convex problem.
 def admm(self, rho=None, max_iter=50, restarts=5,

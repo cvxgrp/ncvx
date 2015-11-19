@@ -65,7 +65,7 @@ class Partition(Boolean):
         idxs = np.argmax(matrix, axis=1)
         for i in range(self.size[0]):
             for j in range(self.size[1]):
-                if j != idxs[i] and np.random.uniform() < 10.0/(self.size[0]*(self.size[1]-1)):
+                if j != idxs[i] and abs(j - idxs[i]) <= 1:
                     new_mat = matrix.copy()
                     new_mat[i,j] = 1
                     new_mat[i,idxs[i]] = 0

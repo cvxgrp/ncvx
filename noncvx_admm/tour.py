@@ -72,6 +72,29 @@ class Tour(Assign):
                     break
         return True
 
+    def _neighbors(self, matrix):
+        """Swap a->b->c->d to a->c->b->d
+        """
+        neighbors_list = []
+        idxs = np.argmax(matrix, axis=1)
+        for a in range(self.size[0]):
+            new_mat = matrix.copy()
+            b = idxs[a]
+            c = idxs[b]
+            d = idxs[c]
+
+            new_mat[a,c] = 1
+            new_mat[a,b] = 0
+
+            new_mat[b,d] = 1
+            new_mat[b,c] = 0
+
+            new_mat[c,b] = 1
+            new_mat[c,d] = 0
+
+            neighbors_list += [new_mat]
+        return neighbors_list
+
     # In the relaxation, we have 0 <= var <= 1.
     def canonicalize(self):
         obj, constraints = super(Tour, self).canonicalize()

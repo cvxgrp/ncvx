@@ -43,7 +43,8 @@ ITERS = 50
 result = prob.solve(method="admm", restarts=RESTARTS,
                     rho=RESTARTS*[10],
                     # rho=np.random.uniform(0,2,size=RESTARTS),
-                    num_proj=10, parallel=False, prox_polished=False,
+                    polish_depth=5,
+                    parallel=False, prox_polished=False,
                     max_iter=ITERS, solver=ECOS, random=True,
                     polish_best=False, sigma=1, show_progress=True)
 

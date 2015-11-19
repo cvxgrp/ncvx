@@ -51,3 +51,15 @@ class Choose(Boolean):
         constraints += [lu.create_eq(lu.sum_entries(obj), k_const)]
         return (obj, constraints)
 
+    def _neighbors(self, matrix):
+        indices = product(xrange(self.size[0]), xrange(self.size[1]))
+        v_ind = sorted(indices, key=lambda ind: -matrix[ind])
+        for i in range(self.size[0]):
+            for j in range(self.size[1]):
+                for k,l in v_ind:
+                    if (i,j) != (k,l):
+                        new_mat = matrix.copy()
+                        new_mat[i,j] = 1
+                        new_mat[k,l] = 0
+                        neighbors_list += [new_mat]
+        return neighbors_list
