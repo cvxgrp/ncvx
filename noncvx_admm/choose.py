@@ -52,14 +52,20 @@ class Choose(Boolean):
         return (obj, constraints)
 
     def _neighbors(self, matrix):
-        indices = product(xrange(self.size[0]), xrange(self.size[1]))
-        v_ind = sorted(indices, key=lambda ind: -matrix[ind])
+        # Can swap a 1 with a neighboring 0.
+        neighbors_list = []
         for i in range(self.size[0]):
             for j in range(self.size[1]):
-                for k,l in v_ind:
-                    if (i,j) != (k,l):
-                        new_mat = matrix.copy()
-                        new_mat[i,j] = 1
-                        new_mat[k,l] = 0
-                        neighbors_list += [new_mat]
+                if matrix[i,j] == 1:
+                    for k in range(i-1,i+1):
+                        for l in range(j-1,j+1):
+                            if k != i and l != j and \
+                               0 <= k < self.size[0] and \
+                               0 <= l < self.size[1] and \
+                               matrix[k,l] == 0:
+                               new_mat = matrix.copy()
+                               new_mat[i,j] = 0
+                               new_mat[k,l] = 1
+                               neighbors_list += [new_mat]
+
         return neighbors_list
