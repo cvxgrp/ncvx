@@ -7,7 +7,7 @@ import random
 np.random.seed(1)
 random.seed(1)
 
-m = 15
+m = 40
 n = 2*m
 k = 10
 M = 1
@@ -27,10 +27,10 @@ print "x true cost", sum_squares(noise).value
 x = Variable(n)
 bound = Bool(n)
 constr = [abs(x) <= M*bound, sum_entries(bound) <= k]
-cost = sum_squares(A*x - b)
+cost = norm(A*x - b)
 prob = Problem(Minimize(cost), constr)
 # prob.solve(solver=GUROBI, TimeLimit=60, verbose=True)
-print "true value", cost.value
+print "true value", (cost**2).value
 # print np.around(x.value, decimals=3)
 
 # ADMM solution.
@@ -45,8 +45,8 @@ ITERS = 50
 prob.solve(method="admm", restarts=RESTARTS,
            rho=np.random.uniform(0,1,size=RESTARTS),
            max_iter=ITERS, solver=ECOS, random=True,
-           prox_polished=True, show_progress=True,
-           num_proj=1, sigma=1)
+           prox_polished=False, show_progress=True,
+           sigma=1, alpha=1)
 print "ADMM value", cost.value
 
 prob.solve(method="relax_project_polish")

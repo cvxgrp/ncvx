@@ -52,7 +52,7 @@ class Card(NonCvxVariable):
         result = matrix.copy()
         for ind in v_ind[self.k:]:
            result[ind] = 0
-        return result
+        return np.maximum(-self.M, np.minimum(result, self.M))
 
     # Constrain all entries to be zero that correspond to
     # zeros in the matrix.

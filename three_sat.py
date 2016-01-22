@@ -46,7 +46,7 @@ result = prob.solve(method="admm", restarts=RESTARTS,
                     polish_depth=5,
                     parallel=False, prox_polished=False,
                     max_iter=ITERS, solver=ECOS, random=True,
-                    polish_best=False, sigma=1, show_progress=True)
+                    polish_best=False, sigma=1, show_progress=True, alpha=1.5)
 
 satisfied = (A*x.value <= b).sum()
 percent_satisfied = 100*satisfied/CLAUSES

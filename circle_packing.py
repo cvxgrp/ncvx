@@ -66,9 +66,9 @@ RESTARTS = 5
 ITERS = 10
 result = prob.solve(method="admm", max_iter=ITERS, random=True, seed=1,
            rho=np.random.uniform(0, 1, size=RESTARTS),
-           num_proj=1, sigma=1,
+           sigma=1,
            restarts=RESTARTS, polish_best=True, prox_polished=False,
-           show_progress=True, parallel=True, verbose=False)
+           show_progress=True, parallel=True, verbose=False, alpha=1.5)
 print result
 print "bounding box dim = ", l.value
 print "circle diameter = ", 1/l.value

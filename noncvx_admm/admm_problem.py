@@ -64,7 +64,7 @@ def get_constr_error(constr):
 def admm_inner_iter(data):
     (idx, orig_prob, rho_val, gamma_merit, max_iter,
     random_z, polish_best, seed, sigma, show_progress,
-    prox_polished, polish_depth, lower_bound, args, kwargs) = data
+    prox_polished, polish_depth, lower_bound, alpha, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
     np.random.seed(idx + seed)
@@ -89,6 +89,9 @@ def admm_inner_iter(data):
             var.z.value = np.random.normal(0, sigma, var.size)
         var.u.value = np.zeros(var.size)
 
+    # x^k prev.
+    old_vars = {var.id:np.zeros(var.size) for var in orig_prob.variables()}
+
     best_so_far = [np.inf, {v.id:np.zeros(v.size) for v in orig_prob.variables()}]
     cur_merit = best_so_far[0]
     # ADMM loop
@@ -100,13 +103,14 @@ def admm_inner_iter(data):
         except cvx.SolverError, e:
             pass
         if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-            old_vars = {var.id:var.value for var in orig_prob.variables()}
 
             for var in noncvx_vars:
-                var.z.value = var.project(var.value + var.u.value)
+                var.z.value = var.project(alpha*var.value + (1-alpha)*old_vars[var.id] + var.u.value)
                 # var.z.value = var.project(np.random.randn(*var.size))
                 # var.z.value = var.project(np.random.uniform(0, 1, size=var.size))
-
+                var.u.value += alpha*var.value + (1-alpha)*old_vars[var.id] - var.z.value
+            # Update previous iterate.
+            old_vars = {var.id:var.value for var in orig_prob.variables()}
 
             if only_discrete(orig_prob):
                 cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far, idx, polish_depth)
@@ -136,13 +140,6 @@ def admm_inner_iter(data):
             if cur_merit < best_so_far[0]:
                 best_so_far[0] = cur_merit
                 best_so_far[1] = sltn
-
-            for var in orig_prob.variables():
-                if isinstance(var, NonCvxVariable):
-                    if prox_polished:
-                        var.z.value = sltn[var.id]
-                    else:
-                        var.u.value += old_vars[var.id] - var.z.value
 
             # # Restore variable values.
             # for var in noncvx_vars:
@@ -212,7 +209,7 @@ def only_discrete(prob):
     return True
 
 # Use ADMM to attempt non-convex problem.
-def admm(self, rho=None, max_iter=50, restarts=5,
+def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
          random=False, sigma=1.0, gamma=1e6, polish_best=True,
          num_procs=None, parallel=True, seed=1, show_progress=False,
          prox_polished=False, polish_depth=5,
@@ -237,14 +234,14 @@ def admm(self, rho=None, max_iter=50, restarts=5,
         best_per_rho = pool.map(admm_inner_iter,
             [(idx, tmp_prob, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
-              prox_polished, polish_depth, lower_bound, args, kwargs) for idx, rho_val in enumerate(rho)])
+              prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:
         best_per_rho = map(admm_inner_iter,
             [(idx, self, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
-              prox_polished, polish_depth, lower_bound, args, kwargs) for idx, rho_val in enumerate(rho)])
+              prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]
