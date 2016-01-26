@@ -33,7 +33,7 @@ for i in range(times):
                         E = reshape(Card(n*n,p[p_ind],1000), n,n)
                         cost=sum_squares(X-L-E)
                         prob=Problem(Minimize(cost))
-                        print prob.solve(method="relax_project_polish")
+                        print prob.solve(method="relax_round_polish")
                         prob.solve(method="admm",max_iter=100, restarts=5, random=True, alpha=1)
 
                         print numpy.linalg.svd(L.value.A, compute_uv=0)

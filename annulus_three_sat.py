@@ -70,7 +70,7 @@ percent_satisfied = 100*satisfied/CLAUSES
 print "%s%% of the clauses were satisfied." % percent_satisfied
 
 
-print prob.solve(method="relax_project_polish")
+print prob.solve(method="relax_round_polish")
 # satisfied = (A*x.value <= b).sum()
 # percent_satisfied = 100*satisfied/CLAUSES
 # print "%s%% of the clauses were satisfied." % percent_satisfied

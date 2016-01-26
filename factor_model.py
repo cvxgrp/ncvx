@@ -41,7 +41,7 @@ cost = sum_squares(Sigma - Sigma_lr - D)
 constraints = [D_vec >= 0, Sigma_lr == Sigma_lr.T, Sigma_lr == Semidef(n)]
 
 prob = Problem(Minimize(cost), constraints)
-prob.solve(method="relax_project_polish", solver=SCS)
+prob.solve(method="relax_round_polish", solver=SCS)
 print "relax and round value", cost.value
 
 # ADMM solution.

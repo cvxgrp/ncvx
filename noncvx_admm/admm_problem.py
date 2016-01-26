@@ -278,7 +278,7 @@ def is_better(noncvx_inf, opt_val, best_so_far, error):
     return (inf_diff > error) or \
            (abs(inf_diff) <= error and opt_val < best_so_far[1])
 
-def relax_project_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5, *args, **kwargs):
+def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5, *args, **kwargs):
     """Solve the relaxation, then project and polish.
     """
     # Augment problem.
@@ -456,5 +456,5 @@ def polish(orig_prob, *args, **kwargs):
 cvx.Problem.register_solve("admm_basic", admm_basic)
 cvx.Problem.register_solve("admm", admm)
 cvx.Problem.register_solve("admm2", admm2)
-cvx.Problem.register_solve("relax_project_polish", relax_project_polish)
+cvx.Problem.register_solve("relax_round_polish", relax_round_polish)
 cvx.Problem.register_solve("repeated_rr", repeated_rr)

@@ -49,7 +49,7 @@ prob.solve(method="admm", restarts=RESTARTS,
            sigma=1, alpha=1)
 print "ADMM value", cost.value
 
-prob.solve(method="relax_project_polish")
+prob.solve(method="relax_round_polish")
 print "relax and round value", cost.value
 
 # Compare to LASSO.
