@@ -1,7 +1,7 @@
 from __future__ import division
 from cvxpy import *
-from noncvx_admm import *
-from noncvx_admm.admm_problem import polish
+from ncvx import *
+from ncvx.admm_problem import polish
 import numpy as np
 import random
 

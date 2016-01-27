@@ -18,7 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 import cvxopt
 import numpy as np
 import unittest

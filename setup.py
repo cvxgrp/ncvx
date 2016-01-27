@@ -1,12 +1,15 @@
 from setuptools import setup
 
 setup(
-    name='noncvx_admm',
-    version='0.2.17',
+    name='ncvx',
+    version='0.1',
     author='Steven Diamond, Reza Takapoui, Stephen Boyd',
-    packages=['noncvx_admm'],
+     author_email='diamond@cs.stanford.edu, takapoui@stanford.edu, boyd@stanford.edu',
+    packages=['ncvx'],
     license='GPLv3',
     zip_safe=False,
-    install_requires=["cvxpy >= 0.2.16", "munkres"],
+    install_requires=["cvxpy >= 3.5", "munkres"],
     use_2to3=True,
+    url='http://github.com/cvxgrp/ncvx/',
+    description='A CVXPY extension for problems with convex objective and decision variables from a nonconvex set.',
 )

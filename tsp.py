@@ -1,6 +1,6 @@
 from __future__ import division
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 import numpy as np
 from scipy import linalg as LA
 

@@ -1,5 +1,5 @@
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 import numpy
 import matplotlib.pyplot as plt
 

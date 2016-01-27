@@ -1,5 +1,5 @@
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 # from ncvx.boolean import Boolean
 # import ncvx.branch_and_bound
 import cvxopt

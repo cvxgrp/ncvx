@@ -1,6 +1,6 @@
 from __future__ import division
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 import networkx as nx
 from networkx.algorithms.approximation.clique import max_clique as max_clique_approx
 import random

@@ -1,6 +1,6 @@
 from __future__ import division
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 import random
 import numpy as np
 

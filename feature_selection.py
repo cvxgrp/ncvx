@@ -1,5 +1,5 @@
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 import numpy as np
 
 # Feature selection on a linear kernel SVM classifier.

@@ -1,6 +1,6 @@
 from cvxpy import *
 # from ncvx.boolean import Boolean
-from noncvx_admm import *
+from ncvx import *
 # import ncvx.branch_and_bound
 import cvxopt
 import cProfile, pstats

@@ -1,6 +1,6 @@
 from __future__ import division
 import cvxpy as cp, numpy as np, cvxopt, matplotlib.pyplot as plt, pickle, random
-import noncvx_admm as ncvx
+import ncvx as ncvx
 
 N = 12 # number of circles
 np.random.seed(0)
