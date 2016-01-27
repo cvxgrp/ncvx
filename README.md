@@ -5,7 +5,7 @@ NCVX is an extension of CVXPY for solving problems with convex objectives and de
 The solver methods provided and the syntax for constructing problems are discussed in [our associated paper](http://stanford.edu/~boyd/papers/ncvx.html).
 
 Installation
-############
+------------
 
 The easiest way to install the package is to run ``pip install ncvx``.
 
