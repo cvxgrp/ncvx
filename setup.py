@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='ncvx',
-    version='0.1.0',
+    version='0.1.1',
     author='Steven Diamond, Reza Takapoui, Stephen Boyd',
      author_email='diamond@cs.stanford.edu, takapoui@stanford.edu, boyd@stanford.edu',
     packages=['ncvx'],
