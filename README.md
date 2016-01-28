@@ -1,8 +1,11 @@
 NCVX
 ====
 
-NCVX is an extension of [CVXPY](http://www.cvxpy.org/) for solving problems with convex objectives and decision variables from a nonconvex set.
+NCVX is a package for modeling and solving problems with convex objectives and decision variables from a nonconvex set.
 The solver methods provided and the syntax for constructing problems are discussed in [our associated paper](http://stanford.edu/~boyd/papers/ncvx.html).
+
+NCVX is built on top of [CVXPY](http://www.cvxpy.org/),
+a domain-specific language for convex optimization embedded in Python.
 
 Installation
 ------------
