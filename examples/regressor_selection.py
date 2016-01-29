@@ -41,7 +41,7 @@ print "NC-ADMM solution =\n", np.around(x.value.T, decimals=3)
 print "--------------------------------------------------------------------"
 
 # Relax-round-polish heurisitc
-prob.solve(method="relax_round_polish")
+prob.solve(method="relax-round-polish")
 print "Relax-round-polish value =", cost.value
 print "Relax-round-polish solution =\n", np.around(x.value.T, decimals=3)
 print "--------------------------------------------------------------------"

@@ -33,7 +33,7 @@ prob.solve(method="NC-ADMM")
 print objective.value
 print x.value
 ```
-Other solve methods can be used by simply changing the solve method, for example ``prob.solve(method="relax_round_polish")`` uses relax-round-polish to approximately solve the problem. Constraints can be added to the problem similar to CVXPY. For example, the following code approximately solves the above problem, with the additional constraint that the components of ``x`` must add up to zero.
+Other solve methods can be used by simply changing the solve method, for example ``prob.solve(method="relax-round-polish")`` uses relax-round-polish to approximately solve the problem. Constraints can be added to the problem similar to CVXPY. For example, the following code approximately solves the above problem, with the additional constraint that the components of ``x`` must add up to zero.
 ```
  = Card(n, k, M)
 objective = sum_squares(A*x - b)

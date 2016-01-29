@@ -48,7 +48,7 @@ penalty = 0
 
 cost = c.T*z #+ gamma*sum_entries(pos(A*z - b))
 prob = Problem(Minimize(-cost + penalty), [z <= a, z >= 0, A*z <= b])
-# val, resid = prob.solve(method="relax_round_polish", gamma=1000, verbose=False)
+# val, resid = prob.solve(method="relax-round-polish", gamma=1000, verbose=False)
 # if resid < 1e-3:
 #     print "relax and round value", -val
 # else:
