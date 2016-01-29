@@ -41,7 +41,7 @@ prob = Problem(Minimize(norm(x, 'inf')), [A*zn_x <= b])
 
 RESTARTS = 10
 ITERS = 50
-result = prob.solve(method="admm", restarts=RESTARTS,
+result = prob.solve(method="NC-ADMM", restarts=RESTARTS,
                     # rho=RESTARTS*[10],
                     num_proj=1,
                     rho=np.random.uniform(0.5, 5, size=RESTARTS),
@@ -59,7 +59,7 @@ x = Boolean(VARIABLES)
 prob = Problem(Minimize(0), [A*x <= b])
 RESTARTS = 10
 ITERS = 50
-result = prob.solve(method="admm", restarts=RESTARTS,
+result = prob.solve(method="NC-ADMM", restarts=RESTARTS,
                     # rho=RESTARTS*[10],
                     num_proj=1,
                     max_iter=ITERS, solver=ECOS, random=True,

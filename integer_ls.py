@@ -19,7 +19,7 @@ b = A.dot(true_x)
 
 prob = Problem(Minimize(sum_squares(A*x - b)))
 prob.solve(method="relax_and_round")
-# prob.solve(method="admm", max_iter=50, restarts=5)
+# prob.solve(method="NC-ADMM", max_iter=50, restarts=5)
 
 print x.value.sum()
 print (x-true_x).value.sum()

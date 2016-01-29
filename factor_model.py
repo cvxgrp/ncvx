@@ -48,7 +48,7 @@ print "relax and round value", cost.value
 prob = Problem(Minimize(cost), constraints)
 RESTARTS = 1
 ITERS = 50
-prob.solve(method="admm", restarts=RESTARTS,
+prob.solve(method="NC-ADMM", restarts=RESTARTS,
            rho=np.random.uniform(0,5,size=RESTARTS),
            max_iter=ITERS, solver=MOSEK, random=True, sigma=1,
            show_progress=True, parallel=True, prox_polished=False)

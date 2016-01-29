@@ -71,7 +71,7 @@ constr = []
 prob = Problem(Minimize(vec(D).T*vec(P)), constr)
 # result = prob.solve(method="relax_and_round", solver=SCS)
 # print "relax and round result", result
-result = prob.solve(method="admm", max_iter=MAX_ITER, parallel=True,
+result = prob.solve(method="NC-ADMM", max_iter=MAX_ITER, parallel=True,
                     restarts=RESTARTS, random=True, show_progress=True,
                     rho=np.random.uniform(0,1,size=RESTARTS),
                     sigma=1.0, polish_depth=50,
@@ -105,7 +105,7 @@ plt.show()
 # #     reg += sum_entries(neg(ordered[:,i+1] - ordered[:,i]))
 
 # prob = Problem(Minimize(cost))
-# result = prob.solve(method="admm", max_iter=MAX_ITER,
+# result = prob.solve(method="NC-ADMM", max_iter=MAX_ITER,
 #                     restarts=RESTARTS, random=True, #rho=RESTARTS*[10],
 #                     solver=ECOS, verbose=False, sigma=1.0, polish_best=False)#, tau=1.1, tau_max=100)
 # print "all constraints hold:", np.all([c.value for c in prob.constraints])

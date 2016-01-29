@@ -64,7 +64,7 @@ prob = cp.Problem(objective, constraints)
 # for iteration in xrange(max_iter):
 RESTARTS = 5
 ITERS = 10
-result = prob.solve(method="admm", max_iter=ITERS, random=True, seed=1,
+result = prob.solve(method="NC-ADMM", max_iter=ITERS, random=True, seed=1,
            rho=np.random.uniform(0, 1, size=RESTARTS),
            sigma=1,
            restarts=RESTARTS, polish_best=True, prox_polished=False,

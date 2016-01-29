@@ -36,7 +36,7 @@ x = Card(n, k, M)
 cost = sum_squares(A*x - b)
 prob = Problem(Minimize(cost))
 RESTARTS = 5; ITERS = 50
-prob.solve(method="admm", restarts=RESTARTS, num_procs = 5, max_iter=ITERS)
+prob.solve(method="NC-ADMM", restarts=RESTARTS, num_procs = 5, max_iter=ITERS)
 print "NC-ADMM value =", cost.value
 print "NC-ADMM solution =\n", np.around(x.value.T, decimals=3)
 print "--------------------------------------------------------------------"

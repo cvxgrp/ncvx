@@ -59,7 +59,7 @@ RESTARTS = 8
 MAX_ITER = 50
 # print prob.solve(method="relax_and_round")
 
-val, resid = prob.solve(method="admm", max_iter=MAX_ITER, random=True, seed=1,
+val, resid = prob.solve(method="NC-ADMM", max_iter=MAX_ITER, random=True, seed=1,
            rho=np.random.uniform(0, 2, size=RESTARTS),
            restarts=RESTARTS, polish_best=False, sigma=1, nu=0.25,
            show_progress=True, parallel=True, num_proj=1)

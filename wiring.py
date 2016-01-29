@@ -35,7 +35,7 @@ cost = 0
 for chip1, chip2 in connections:
     cost += abs(positions[chip1] - positions[chip2])
 prob = Problem(Minimize(cost), [sum_entries(positions) >= n*(n-1)/2])
-result = prob.solve(method="admm", max_iter=MAX_ITER,
+result = prob.solve(method="NC-ADMM", max_iter=MAX_ITER,
                     restarts=RESTARTS, random=True,
                     solver=ECOS, verbose=False)#, tau=1.1, tau_max=100)
 # result = prob.solve(method="relax_and_round")

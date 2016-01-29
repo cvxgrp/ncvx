@@ -122,7 +122,7 @@ RESTARTS = 8
 MAX_ITER = 20
 # print prob.solve(method="relax_and_round")
 
-prob.solve(method="admm", max_iter=MAX_ITER, random=True, seed=1,
+prob.solve(method="NC-ADMM", max_iter=MAX_ITER, random=True, seed=1,
            rho=np.random.uniform(0, 1, size=RESTARTS), prox_polished=False,
            restarts=RESTARTS, sigma=1, polish_depth=100,
            show_progress=True, parallel=True)

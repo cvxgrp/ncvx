@@ -225,7 +225,7 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
 
     # Solve the relaxation.
     lower_bound = self.solve(*args, **kwargs)
-    print "lower bound", lower_bound
+    # print "lower bound", lower_bound
 
     # Algorithm.
     if parallel:
@@ -245,7 +245,7 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]
-    print "best found", best_so_far[0]
+    #print "best found", best_so_far[0]
     # Unpack result.
     for var in self.variables():
         var.value = best_so_far[1][var.id]
@@ -454,7 +454,7 @@ def polish(orig_prob, *args, **kwargs):
 
 # Add admm method to cvx Problem.
 cvx.Problem.register_solve("admm_basic", admm_basic)
-cvx.Problem.register_solve("admm", admm)
+cvx.Problem.register_solve("NC-ADMM", admm)
 cvx.Problem.register_solve("admm2", admm2)
 cvx.Problem.register_solve("relax_round_polish", relax_round_polish)
 cvx.Problem.register_solve("repeated_rr", repeated_rr)

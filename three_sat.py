@@ -40,7 +40,7 @@ x = Boolean(VARIABLES)
 prob = Problem(Minimize(0), [A*x <= b])
 RESTARTS = 1
 ITERS = 50
-result = prob.solve(method="admm", restarts=RESTARTS,
+result = prob.solve(method="NC-ADMM", restarts=RESTARTS,
                     rho=RESTARTS*[10],
                     # rho=np.random.uniform(0,2,size=RESTARTS),
                     polish_depth=5,

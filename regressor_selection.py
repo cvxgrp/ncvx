@@ -42,7 +42,7 @@ prob = Problem(Minimize(cost))
 
 RESTARTS = 10
 ITERS = 50
-prob.solve(method="admm", restarts=RESTARTS,
+prob.solve(method="NC-ADMM", restarts=RESTARTS,
            rho=np.random.uniform(0,1,size=RESTARTS),
            max_iter=ITERS, solver=ECOS, random=True,
            prox_polished=False, show_progress=True,

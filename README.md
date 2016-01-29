@@ -29,7 +29,7 @@ b = numpy.random.randn(m)
 x = Card(n, k, 1)
 objective = sum_squares(A*x - b)
 prob = Problem(Minimize(objective), [])
-prob.solve(method="admm")
+prob.solve(method="NC-ADMM")
 print objective.value
 print x.value
 ```
@@ -39,7 +39,7 @@ Other solve methods can be used by simply changing the solve method, for example
 objective = sum_squares(A*x - b)
 constraints = [sum(x) == 0]
 prob = Problem(Minimize(objective), constraints)
-prob.solve(method="admm")
+prob.solve(method="NC-ADMM")
 print objective.value
 print x.value
 ```

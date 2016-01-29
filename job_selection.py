@@ -57,7 +57,7 @@ prob = Problem(Minimize(-cost + penalty), [z <= a, z >= 0, A*z <= b])
 
 RESTARTS = 5
 ITERS = 50
-val, resid = prob.solve(method="admm", restarts=RESTARTS, show_progress=True,
+val, resid = prob.solve(method="NC-ADMM", restarts=RESTARTS, show_progress=True,
            rho=np.random.uniform(0,1,size=RESTARTS), polish_best=False,
            # rho=RESTARTS*[0],
            num_proj=10, parallel=True, prox_polished=False,

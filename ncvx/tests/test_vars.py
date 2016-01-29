@@ -42,7 +42,7 @@ class TestVars(unittest.TestCase):
     def test_boolean(self):
         x = Variable(5,4)
         p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)), [x == Boolean(5,4)])
-        result = p.solve(method="admm", solver=CVXOPT)
+        result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result, 20)
         for i in xrange(x.size[0]):
             for j in xrange(x.size[1]):
@@ -51,7 +51,7 @@ class TestVars(unittest.TestCase):
 
         x = Variable()
         p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)), [x == Boolean(5,4)[0,0]])
-        result = p.solve(method="admm", solver=CVXOPT)
+        result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result, 1)
         self.assertAlmostEqual(x.value*(1-x.value), 0)
 
@@ -60,7 +60,7 @@ class TestVars(unittest.TestCase):
         x = Variable(5,4)
         p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)),
                     [x == Choose(5,4,k=4)])
-        result = p.solve(method="admm", solver=CVXOPT)
+        result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result, 20)
         for i in xrange(x.size[0]):
             for j in xrange(x.size[1]):
@@ -73,7 +73,7 @@ class TestVars(unittest.TestCase):
         x = Card(5,k=3)
         p = Problem(Maximize(sum_entries(x)),
             [x <= 1, x >= 0])
-        result = p.solve(method="admm")
+        result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result, 3)
         for v in np.nditer(x.value):
             self.assertAlmostEqual(v*(1-v), 0)
@@ -85,7 +85,7 @@ class TestVars(unittest.TestCase):
         b = Boolean(5, 4)
         p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)),
                     [x == c, x == b])
-        result = p.solve(method="admm", solver=CVXOPT)
+        result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result, 20)
         for i in xrange(x.size[0]):
             for j in xrange(x.size[1]):
@@ -98,6 +98,6 @@ class TestVars(unittest.TestCase):
         c = cvxopt.matrix([1,2,3,4,5]).T
         perm = Assign(5, 5)
         p = Problem(Minimize(sum_entries(x)), [x == c*perm])
-        result = p.solve(method="admm")
+        result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result, 15)
         self.assertAlmostEqual(sorted(np.nditer(x.value)), c)

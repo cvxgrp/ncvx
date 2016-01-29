@@ -63,7 +63,7 @@ constraints.extend(numbers[k] == solution[k] for k in known)
 # attempt to solve
 cost = sum([square(numbers[k] - solution[k]) for k in known])
 p = Problem(Minimize(cost), constraints)
-result = p.solve(method="admm", max_iter=100,
+result = p.solve(method="NC-ADMM", max_iter=100,
                  restarts=5, random=True, verbose=True)
 print result
 print numbers.value

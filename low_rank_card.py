@@ -34,7 +34,7 @@ for i in range(times):
                         cost=sum_squares(X-L-E)
                         prob=Problem(Minimize(cost))
                         print prob.solve(method="relax_round_polish")
-                        prob.solve(method="admm",max_iter=100, restarts=5, random=True, alpha=1)
+                        prob.solve(method="NC-ADMM",max_iter=100, restarts=5, random=True, alpha=1)
 
                         print numpy.linalg.svd(L.value.A, compute_uv=0)
                         error_L[i,p_ind] = sum_squares(L0-L).value/sum_squares(L0).value
