@@ -1,4 +1,3 @@
-from __future__ import division
 from cvxpy import *
 from ncvx import *
 import numpy as np
@@ -31,7 +30,7 @@ b = A.dot(x_true) + noise
 #print "Gurobi solution =\n", np.around(x.value.T, decimals=3)
 #print "--------------------------------------------------------------------"
 
-#NC-ADMM heuristic.
+# NC-ADMM heuristic.
 x = Card(n, k, M)
 cost = sum_squares(A*x - b)
 prob = Problem(Minimize(cost))
