@@ -1,11 +1,10 @@
 import cvxpy as cp, numpy as np, cvxopt, matplotlib.pyplot as plt
-import noncvx_admm as ncvx
+import ncvx
 
 np.random.seed(1)
 
 N = 41 # number of circles
 r = 0.4 + 0.6 * np.random.rand(N) # radii
-print r
 
 #define variables.
 x_vals = [cp.Variable() for i in range(N)]

@@ -278,7 +278,7 @@ def is_better(noncvx_inf, opt_val, best_so_far, error):
     return (inf_diff > error) or \
            (abs(inf_diff) <= error and opt_val < best_so_far[1])
 
-def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, seed = 1, polish_depth=5, *args, **kwargs):
+def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5, seed = 1, *args, **kwargs):
     """Solve the relaxation, then project and polish.
     """
     np.random.seed(seed)
@@ -430,7 +430,7 @@ def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
     return best_so_far
 
 def get_noncvx_vars(prob):
-    return [var for var in prob.variables() if getattr(var, "noncvx", False)]
+    return sorted([var for var in prob.variables() if getattr(var, "noncvx", False)], key=lambda v: v.id)
 
 def polish(orig_prob, *args, **kwargs):
     # TODO not descending right.
