@@ -30,20 +30,20 @@ class Annulus(NonCvxVariable):
         super(Annulus, self).__init__(rows, 1, *args, **kwargs)
 
     def _project(self, matrix):
-        if self.R >= norm(matrix, 2).value >= self.r:
+        if self.R >= cvx.norm(matrix, 2).value >= self.r:
             return matrix
-        elif norm(matrix, 2).value == 0:
+        elif cvx.norm(matrix, 2).value == 0:
             result = np.ones(self.size)
-            return self.r*result/norm(result, 2).value
-        elif norm(matrix, 2).value < self.r:
-            return self.r*matrix/norm(matrix, 2).value
+            return self.r*result/cvx.norm(result, 2).value
+        elif cvx.norm(matrix, 2).value < self.r:
+            return self.r*matrix/cvx.norm(matrix, 2).value
         else:
-            return self.R*matrix/norm(matrix, 2).value
+            return self.R*matrix/cvx.norm(matrix, 2).value
 
     def _restrict(self, matrix):
         # Add restriction that beyond hyperplane at projection onto
         # n-sphere of radius r.
-        return [matrix.T*self >= self.r*norm(matrix, 2).value]
+        return [matrix.T*self >= self.r*cvx.norm(matrix, 2).value]
 
     def relax(self):
         """The convex relaxation.

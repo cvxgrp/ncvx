@@ -29,28 +29,6 @@ try:
 except:
     from queue import PriorityQueue
 
-# Use ADMM to attempt non-convex problem.
-def admm_basic(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
-    noncvx_vars = []
-    for var in self.variables():
-        if getattr(var, "noncvx", False):
-            noncvx_vars += [var]
-            var.init_z(random=False)
-    # Form ADMM problem.
-    obj = self.objective.args[0]
-    for var in noncvx_vars:
-        obj += (rho/2)*cvx.sum_entries(cvx.square(var - var.z + var.u))
-    prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
-    # ADMM loop
-    for i in range(iterations):
-        result = prob.solve(*args, **kwargs)
-        print "relaxation", result
-        for idx, var in enumerate(noncvx_vars):
-            var.z.value = var.project(var.value + var.u.value)
-            # print idx, var.z.value, var.value, var.u.value
-            var.u.value += var.value - var.z.value
-    return polish(self, *args, **kwargs)
-
 def get_constr_error(constr):
     if isinstance(constr, cvx.constraints.EqConstraint):
         error = cvx.abs(constr.args[0] - constr.args[1])
@@ -329,7 +307,7 @@ def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5, see
         else:
             # Try to polish.
             try:
-                polish_opt_val, status = polish(rel_prob, *args, **kwargs)
+                polish_opt_val, status = polish(rel_prob, polish_depth, *args, **kwargs)
                 # print "post polish cost", idx, k, rel_prob.objective.value
             except cvx.SolverError, e:
                 polish_opt_val = None
@@ -356,98 +334,6 @@ def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5, see
 
     return self.objective.value, residual.value
 
-def repeated_rr(self, tau_init=1, tau_max=250, delta=1.1, max_iter=10,
-                random=False, abs_eps=1e-4, rel_eps=1e-4, *args, **kwargs):
-    noncvx_vars = get_noncvx_vars(self)
-    # Form ADMM problem.
-    tau_param = cvx.Parameter(sign="positive")
-    tau_param.value = 0
-    obj = self.objective.args[0]
-    for var in noncvx_vars:
-        obj = obj + (tau_param)*cvx.norm(var - var.z, 1)
-    prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
-    # Algorithm.
-    best_so_far = [np.inf, np.inf, {}]
-    for var in noncvx_vars:
-        var.init_z(random=random)
-    # ADMM loop
-    for k in range(max_iter):
-        try:
-            prob.solve(*args, **kwargs)
-        except cvx.SolverError, e:
-            pass
-        if prob.status is cvx.OPTIMAL:
-            opt_val = self.objective.value
-            noncvx_inf = total_dist(noncvx_vars)
-            print "iter ", k
-            print "tau", tau_param.value
-            print "original obj val", opt_val
-            print "augmented value", prob.value
-            print "noncvx_inf", noncvx_inf
-
-            # Is the infeasibility better than best_so_far?
-            error = get_error(noncvx_vars, abs_eps, rel_eps)
-            if is_better(noncvx_inf, opt_val, best_so_far, error):
-                best_so_far[0] = noncvx_inf
-                best_so_far[1] = opt_val
-                best_so_far[2] = {v.id:v.value for v in prob.variables()}
-
-            for var in noncvx_vars:
-                var.z.value = var.project(var.value)
-        else:
-            break
-
-        # Update tau.
-        tau_param.value = max(tau_init, min(tau_param.value*(delta**k), tau_max))
-
-        # Convergence criteria.
-        # TODO
-
-        # # Polish the best iterate.
-        # for var in prob.variables():
-        #     var.value = best_so_far[2][var.id]
-        # opt_val, status = polish(self, *args, **kwargs)
-        # if status is cvx.OPTIMAL:
-        #    error = get_error(noncvx_vars, eps, rel_eps)
-        #    if is_better(0, opt_val, best_so_far, error):
-        #         best_so_far[0] = 0
-        #         best_so_far[1] = opt_val
-        #         best_so_far[2] = {v.id:v.value for v in prob.variables()}
-
-    # Unpack result.
-    for var in prob.variables():
-        var.value = best_so_far[2][var.id]
-    error = get_error(noncvx_vars, abs_eps, rel_eps)
-    if best_so_far[0] < error:
-        return best_so_far[1]
-    else:
-        return np.inf
-
-# Use ADMM to attempt non-convex problem.
-def admm2(self, rho=0.5, iterations=5, random=False, *args, **kwargs):
-    noncvx_vars = []
-    for var in self.variables():
-        if getattr(var, "noncvx", False):
-            var.init_z(random=random)
-            noncvx_vars += [var]
-    # Form ADMM problem.
-    obj = self.objective.args[0]
-    for var in noncvx_vars:
-        obj = obj + (rho/2)*cvx.sum_squares(var - var.z + var.u)
-    prob = cvx.Problem(cvx.Minimize(obj), self.constraints)
-    # ADMM loop
-    best_so_far = np.inf
-    for i in range(iterations):
-        result = prob.solve(*args, **kwargs)
-        for var in noncvx_vars:
-            var.z.value = var.project(var.value + var.u.value)
-            var.u.value += var.value - var.z.value
-        polished_opt = polish(self, noncvx_vars, *args, **kwargs)
-        if polished_opt < best_so_far:
-            best_so_far = polished_opt
-            print best_so_far
-    return best_so_far
-
 def get_noncvx_vars(prob):
     return sorted([var for var in prob.variables() if getattr(var, "noncvx", False)], key=lambda v: v.id)
 
@@ -471,8 +357,5 @@ def polish(orig_prob, polish_depth=5, *args, **kwargs):
     return polish_prob.value, polish_prob.status
 
 # Add admm method to cvx Problem.
-cvx.Problem.register_solve("admm_basic", admm_basic)
 cvx.Problem.register_solve("NC-ADMM", admm)
-cvx.Problem.register_solve("admm2", admm2)
 cvx.Problem.register_solve("relax-round-polish", relax_round_polish)
-cvx.Problem.register_solve("repeated_rr", repeated_rr)
