@@ -69,6 +69,11 @@ class NonCvxVariable(cvxpy.Variable):
         matrix = self.project(matrix)
         return self._neighbors(matrix)
 
+    def relax(self):
+        """The default convex relaxation.
+        """
+        return []
+
     # Fix the variable so it obeys the non-convex constraint.
     @abc.abstractmethod
     def _restrict(self, matrix):

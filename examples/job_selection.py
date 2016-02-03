@@ -22,22 +22,22 @@ b = A.dot(z_true)
 
 
 # NC-ADMM heuristic
-z = Integer(n)
+z = Integer(n, M=a)
 cost = c.T*z
-constraints = [z <= a, z >= 0, A*z <= b]
-prob = Problem(Minimize(-cost), constraints)
-val, resid = prob.solve(method="NC-ADMM")
+constraints = [z >= 0, A*z <= b]
+prob = Problem(Maximize(cost), constraints)
+val, resid = prob.solve(method="NC-ADMM", polish_depth=5, show_progress=True)
 print "NC-ADMM residual =", resid
-print "NC-ADMM value =", -val 
+print "NC-ADMM value =", val
 
 # Relax-round-polish heuristic
-val, resid = prob.solve(method="relax-round-polish")
+val, resid = prob.solve(method="relax-round-polish", polish_depth=5)
 print "Relax-round-polish residual =", resid
-print "Relax-round-polish value =", -val
+print "Relax-round-polish value =", val
 
 ## Global solution via Gurobi. (Uncooment the code below.)
 z = Int(n)
-cost = c.T*z 
+cost = c.T*z
 prob = Problem(Maximize(cost),
                [z <= a, z >= 0, A*z <= b])
 prob.solve(solver=GUROBI, TimeLimit = 20)

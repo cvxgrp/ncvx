@@ -21,11 +21,13 @@ from .boolean import Boolean
 import cvxopt
 import numpy as np
 from itertools import product
-import cvxpy.lin_ops.lin_utils as lu
+import cvxpy as cvx
 
 class Choose(Boolean):
     """ A variable with k 1's and all other entries 0. """
     def __init__(self, rows=1, cols=1, k=None, *args, **kwargs):
+        if k is None:
+            raise Exception("Choose requires a value for k.")
         self.k = k
         super(Choose, self).__init__(rows, cols, *args, **kwargs)
 
@@ -45,11 +47,10 @@ class Choose(Boolean):
         return result
 
     # In the relaxation, we have 0 <= var <= 1.
-    def canonicalize(self):
-        obj, constraints = super(Choose, self).canonicalize()
-        k_const = lu.create_const(self.k, (1, 1))
-        constraints += [lu.create_eq(lu.sum_entries(obj), k_const)]
-        return (obj, constraints)
+    def relax(self):
+        constr = super(Choose, self).relax()
+        constr += [cvx.sum_entries(self) == self.k]
+        return constr
 
     def _neighbors(self, matrix):
         # Can swap a 1 with a neighboring 0.

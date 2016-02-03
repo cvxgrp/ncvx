@@ -18,9 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-from cvxpy import norm
-from cvxpy.constraints.second_order import SOC
-import cvxpy.lin_ops.lin_utils as lu
+import cvxpy as cvx
 import numpy as np
 
 class Annulus(NonCvxVariable):
@@ -47,7 +45,8 @@ class Annulus(NonCvxVariable):
         # n-sphere of radius r.
         return [matrix.T*self >= self.r*norm(matrix, 2).value]
 
-    def canonicalize(self):
-        obj, constr = super(Annulus, self).canonicalize()
-        R = lu.create_const(self.R, (1, 1))
-        return (obj, constr + [SOC(R, [obj])])
+    def relax(self):
+        """The convex relaxation.
+        """
+        constr = super(Annulus, self).relax()
+        return constr + [cvx.norm(self, 2) <= self.R]

@@ -19,12 +19,9 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 
 from .noncvx_variable import NonCvxVariable
 import cvxpy.interface.matrix_utilities as intf
-from cvxpy.atoms import pnorm
 from itertools import product
 import numpy as np
-import cvxpy.lin_ops.lin_utils as lu
-
-# TODO L1 norm as convex relaxation?
+import cvxpy as cvx
 
 class Card(NonCvxVariable):
     """ A variable with constrained cardinality. """
@@ -65,15 +62,9 @@ class Card(NonCvxVariable):
                     constraints.append(self[i, j] == 0)
         return constraints
 
-    def canonicalize(self):
-        obj, constr = super(Card, self).canonicalize()
-        # ||x||_1 <= kM
-        kM_const = lu.create_const(self.M*self.k, (1, 1))
-        L1_obj, L1_constr = pnorm.graph_implementation([obj], (1,1), [1])
-        constr += [lu.create_leq(L1_obj, kM_const)] + L1_constr
-        # ||x||_inf <= M
-        M_const = lu.create_const(self.M, (1, 1))
-        LInf_obj, LInf_constr = pnorm.graph_implementation([obj], (1,1), [np.inf])
-        constr += [lu.create_leq(LInf_obj, M_const)] + LInf_constr
-
-        return (obj, constr)
+    def relax(self):
+        """The convex relaxation.
+        """
+        constr = super(Card, self).relax()
+        return constr + [cvx.norm(self, 1) <= self.k*self.M,
+                         cvx.norm(self, 'inf') <= self.M]

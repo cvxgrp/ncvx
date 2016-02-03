@@ -20,12 +20,12 @@ Sigma = Sigma_true + noise
 
 
 # NC-ADMM heuristic
-Sigma_lr = Rank(n, n, k, symmetric=True)
+Sigma_lr = Rank(n, n, k, M=None, symmetric=True)
 D_vec = Variable(n); D = diag(D_vec)
 cost = sum_squares(Sigma - Sigma_lr - D)
-constraints = [D_vec >= 0, Sigma_lr == Sigma_lr.T, Sigma_lr >> 0]
+constraints = [D_vec >= 0, Sigma_lr >> 0]
 prob = Problem(Minimize(cost), constraints)
-prob.solve(method="NC-ADMM", solver=SCS)
+prob.solve(method="NC-ADMM", solver=SCS, show_progress=True)
 print "NC-ADMM value", cost.value
 
 # Relax-round-polish heuristic

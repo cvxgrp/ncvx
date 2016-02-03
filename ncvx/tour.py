@@ -18,9 +18,10 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .assign import Assign
-import cvxpy.lin_ops.lin_utils as lu
 import numpy as np
-from cvxpy.constraints.semidefinite import SDP
+import cvxpy as cvx
+
+# TODO change to cycle.
 
 class Tour(Assign):
     """ A permutation matrix that describes a single cycle.
@@ -95,18 +96,14 @@ class Tour(Assign):
             neighbors_list += [new_mat]
         return neighbors_list
 
-    # In the relaxation, we have 0 <= var <= 1.
-    def canonicalize(self):
-        obj, constraints = super(Tour, self).canonicalize()
+    def relax(self):
+        """Convex relaxation.
+        """
+        constr = super(Tour, self).relax()
         # Ensure it's a tour.
         n = self.size[0]
         # Diagonal == 0 constraint.
-        constraints += [lu.create_eq(lu.diag_mat(obj))]
+        constr += [cvx.diag(self) == 0]
         # Spectral constraint.
         mat_val = np.cos(2*np.pi/n)*np.eye(n) + 4*np.ones((n,n))/n
-        mat_const = lu.create_const(mat_val, (n, n))
-        symm = lu.sum_expr([obj, lu.transpose(obj)])
-        two_const = lu.create_const(2, (1,1))
-        symm = lu.div_expr(symm, two_const)
-        constraints += [SDP(lu.sub_expr(mat_const, symm), enforce_sym=False)]
-        return (obj, constraints)
+        return constr + [mat_val >> (self + self.T)/2]

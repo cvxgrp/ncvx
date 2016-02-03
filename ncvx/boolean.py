@@ -49,10 +49,8 @@ class Boolean(NonCvxVariable):
                 neighbors_list += [new_mat]
         return neighbors_list
 
-    # In the relaxation, we have 0 <= var <= 1.
-    def canonicalize(self):
-        obj, constraints = super(Boolean, self).canonicalize()
-        one = lu.create_const(np.ones(self.size), self.size)
-        constraints += [lu.create_geq(obj),
-                        lu.create_leq(obj, one)]
-        return (obj, constraints)
+    def relax(self):
+        """The convex relaxation.
+        """
+        constr = super(Boolean, self).relax()
+        return constr + [0 <= self, self <= 1]

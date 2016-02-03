@@ -18,18 +18,21 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-from cvxpy import Variable
+import cvxpy as cvx
 import numpy as np
 
-# TODO nuclear norm as convex relaxation?
+def Rank(rows, cols, k, M=None, symmetric=False):
+    if symmetric:
+        return SymmRank(rows, cols, k, M)
+    else:
+        return AsymmRank(rows, cols, k, M)
 
-class Rank(NonCvxVariable):
+class AsymmRank(NonCvxVariable):
     """ A variable satisfying Rank(X) <= k. """
-    def __init__(self, rows, cols, k, M=None, symmetric=False, *args, **kwargs):
+    def __init__(self, rows, cols, k, M, *args, **kwargs):
         self.k = k
         self.M = M
-        self.symmetric = symmetric
-        super(Rank, self).__init__(rows, cols, *args, **kwargs)
+        super(AsymmRank, self).__init__(rows, cols, *args, **kwargs)
 
     def init_z(self, random):
         """Initializes the value of the replicant variable.
@@ -42,31 +45,40 @@ class Rank(NonCvxVariable):
     def _project(self, matrix):
         """All singular values except k-largest (by magnitude) set to zero.
         """
-        if self.symmetric:
-            w, V = np.linalg.eigh(matrix)
-            w_sorted_idxs = np.argsort(-w)
-            w[w_sorted_idxs[self.k:]] = 0
-            return V.dot(np.diag(w)).dot(V.T)
+        U, s, V = np.linalg.svd(matrix)
+        s[self.k:] = 0
+        return U.dot(np.diag(s)).dot(V)
+
+    def _restrict(self, matrix):
+        U, s, V = np.linalg.svd(matrix)
+        Sigma = cvx.Variable(self.k, self.k)
+        return [self == U[:,:self.k]*Sigma*V.T[:self.k,:]]
+
+    def relax(self):
+        if self.M is None:
+            return []
         else:
-            U, s, V = np.linalg.svd(matrix)
-            s[self.k:] = 0
-            return U.dot(np.diag(s)).dot(V)
+            return [cvx.norm(self, 2) <= self.M]
+
+class SymmRank(AsymmRank):
+    """ A symmetric variable satisfying Rank(X) <= k. """
+
+    def _project(self, matrix):
+        """All singular values except k-largest (by magnitude) set to zero.
+        """
+        w, V = np.linalg.eigh(matrix)
+        w_sorted_idxs = np.argsort(-w)
+        w[w_sorted_idxs[self.k:]] = 0
+        return V.dot(np.diag(w)).dot(V.T)
 
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
-        # TODO is this really working?
-        if self.symmetric:
-            w, V = np.linalg.eigh(matrix)
-            w_sorted_idxs = np.argsort(-w)
-            pos_w = w[w_sorted_idxs[:self.k]]
-            pos_V = V[:,w_sorted_idxs[:self.k]]
-            # print V.dot(np.diag(w)).dot(V.T) - pos_V.dot(np.diag(pos_w)).dot(pos_V.T)
-            Sigma = Variable(self.k, self.k)
-            return [self == pos_V*Sigma*pos_V.T]
-        else:
-            U, s, V = np.linalg.svd(matrix)
-            Sigma = Variable(self.k, self.k)
-            return [self == U[:,:self.k]*Sigma*V.T[:self.k,:]]
+        w, V = np.linalg.eigh(matrix)
+        w_sorted_idxs = np.argsort(-w)
+        pos_w = w[w_sorted_idxs[:self.k]]
+        pos_V = V[:,w_sorted_idxs[:self.k]]
+        Sigma = cvx.Symmetric(self.k, self.k)
+        return [self == pos_V*Sigma*pos_V.T]
 
-    # def canonicalize(self):
-    #     norm(self, 2) <= self.M
+    def relax(self):
+        return super(SymmRank, self).relax() + [self == self.T]

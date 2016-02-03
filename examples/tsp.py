@@ -23,7 +23,8 @@ for i in range(n):
 P = Tour(n)
 cost = vec(D).T*vec(P)
 prob = Problem(Minimize(cost), [])
-result = prob.solve(method="NC-ADMM", solver = SCS)
+result = prob.solve(method="NC-ADMM", solver = SCS,
+                    show_progress=True)
 print "final value", cost.value
 
 # Plotting

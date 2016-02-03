@@ -18,9 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-from cvxpy import norm
-from cvxpy.constraints.second_order import SOC
-import cvxpy.lin_ops.lin_utils as lu
+import cvxpy as cvx
 import numpy as np
 
 class Sphere(NonCvxVariable):
@@ -41,15 +39,14 @@ class Sphere(NonCvxVariable):
     def _project(self, matrix):
         if np.all(matrix == 0):
             result = np.ones(self.size)
-            return result/norm(result, 2).value
+            return result/cvx.norm(result, 2).value
         else:
-            return matrix/norm(matrix, 2).value
+            return matrix/cvx.norm(matrix, 2).value
 
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
         return [self == matrix]
 
-    def canonicalize(self):
-        obj, constr = super(Sphere, self).canonicalize()
-        one = lu.create_const(1, (1, 1))
-        return (obj, constr + [SOC(one, [obj])])
+    def relax(self):
+        constr = super(Sphere, self).relax()
+        return constr + [cvx.norm(self, 2) <= 1]

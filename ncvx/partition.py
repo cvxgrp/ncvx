@@ -21,8 +21,7 @@ from .boolean import Boolean
 import cvxopt
 import numpy as np
 from itertools import product
-from cvxpy import diff, sum_entries, Variable
-import cvxpy.lin_ops.lin_utils as lu
+import cvxpy as cvx
 
 class Partition(Boolean):
     """ A boolean matrix with exactly one 1 in each row.
@@ -79,27 +78,8 @@ class Partition(Boolean):
     #         neighbors_list.append(self._project(matrix + w))
     #     return neighbors_list
 
-    # In the relaxation, we have 0 <= var <= 1.
-    def canonicalize(self):
-        # HACK.
-        X = Variable(*self.size)
-        X.id = self.id
-        constraints = [0 <= X, X <= 1, sum_entries(X, axis=1) == 1]
-                       # diff((self.a.T*X).T) >= 0]
-
-        canon_constr = []
-        for cons in constraints:
-            canon_constr += cons.canonical_form[1]
-        return (X.canonical_form[0], canon_constr)
-        # obj, constraints = super(Choose, self).canonicalize()
-        # const_size = (self.size[1], 1)
-        # mul_ones = lu.create_const(np.ones(const_size), const_size)
-        # const_size = (self.size[0], 1)
-        # rhs_ones = lu.create_const(np.ones(const_size), const_size)
-        # lhs_expr = lu.rmul_expr(obj, mul_ones, const_size)
-        # constraints += [lu.create_eq(mul_expr, constr_ones)]
-
-        # # Ordering constraint.
-        # aT_const = lu.create_const(self.a.T, (1, self.size[0]))
-        # mul_expr = lu.mul_expr(aT_const, obj, (1, self.size[1]))
-        # pos_neg_vec = lu.create_const( , (self.size[0], ))
+    def relax(self):
+        """Convex relaxation.
+        """
+        constr = super(Partition, self).relax()
+        return constr + [cvx.sum_entries(self, axis=1) == 1]

@@ -15,21 +15,19 @@ w = np.random.rand(1,n)
 # NC-ADMM heuristic
 x = Boolean(n)
 y = Choose(m, 1, k)
-cost = - w * x
+weight = w * x
 constraints = [A * y >= x]
-prob = Problem(Minimize(cost), constraints)
+prob = Problem(Maximize(weight), constraints)
 
-RESTARTS = 5
-ITERS = 100
 prob.solve(method="NC-ADMM")
-print -cost.value
+print "NC-ADMM solution = ", weight.value
 
 # Gurobi (uncomment code below)
 x = Bool(n)
 y = Bool(m)
-cost = - w * x
+weight = w * x
 constraints = [sum(y) <= k, A * y >= x]
-prob = Problem(Minimize(cost), constraints)
+prob = Problem(Maximize(weight), constraints)
 
 prob.solve(solver = GUROBI)
-print -cost.value
+print "GUROBI solution = ", weight.value

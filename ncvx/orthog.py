@@ -18,8 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-import cvxpy.lin_ops.lin_utils as lu
-from cvxpy.constraints import SDP
+import cvxpy as cvx
 import numpy as np
 import scipy.sparse as sp
 
@@ -44,15 +43,11 @@ class Orthog(NonCvxVariable):
     def _restrict(self, matrix):
         return [self == matrix]
 
-    def canonicalize(self):
+    def relax(self):
         """Relaxation [I X; X^T I] is PSD.
         """
-        obj, constr = super(Orthog, self).canonicalize()
-        identity = sp.eye(self.size[0])
-        identity = lu.create_const(identity, self.size, sparse=True)
-        obj = lu.vstack([
-            lu.hstack([identity, obj]),
-            lu.hstack([lu.transpose(obj), identity]),
-        ])
-        constr.append(SDP(obj))
-        return (obj, constr)
+        rows, cols = self.size
+        constr = super(Orthog, self).relax()
+        mat  = cvx.bmat([[np.eye(rows), self],
+                         [X.T, np.eye(cols)]])
+        return constr + [mat >> 0]
