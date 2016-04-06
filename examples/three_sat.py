@@ -1,5 +1,5 @@
 from cvxpy import *
-from noncvx_admm import *
+from ncvx import *
 import random
 import numpy as np
 
@@ -42,7 +42,7 @@ while True:
 x = Boolean(num_vars)
 prob = Problem(Minimize(0), [A*x <= b])
 RESTARTS = 10
-result = prob.solve(method="admm")
+result = prob.solve(method="NC-ADMM")
 
 satisfied = (A*x.value <= b).sum()
 percent_satisfied = 100*satisfied/num_clauses
