@@ -24,6 +24,7 @@ import multiprocessing
 import cvxpy as cvx
 import numpy as np
 import random
+from scsprox import Prox
 try:
     from Queue import PriorityQueue
 except:
@@ -40,7 +41,7 @@ def get_constr_error(constr):
     return cvx.sum_entries(error)
 
 def admm_inner_iter(data):
-    (idx, orig_prob, rho_val, gamma_merit, max_iter,
+    (idx, orig_prob, prox, rho_val, gamma_merit, max_iter,
     random_z, polish_best, seed, sigma, show_progress,
     prox_polished, polish_depth, lower_bound, alpha, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
@@ -53,10 +54,10 @@ def admm_inner_iter(data):
     for constr in orig_prob.constraints:
         merit_func += gamma_merit*get_constr_error(constr)
     # Form ADMM problem.
-    obj = orig_prob.objective.args[0]
-    for var in noncvx_vars:
-        obj += (rho_val/2)*cvx.sum_squares(var - var.z + var.u)
-    prob = cvx.Problem(cvx.Minimize(obj), orig_prob.constraints)
+    # obj = orig_prob.objective.args[0]
+    # for var in noncvx_vars:
+    #     obj += (rho_val/2)*cvx.sum_squares(var - var.z + var.u)
+    # prob = cvx.Problem(cvx.Minimize(obj), orig_prob.constraints)
 
     for var in noncvx_vars:
         # var.init_z(random=random_z)
@@ -76,12 +77,15 @@ def admm_inner_iter(data):
     for k in range(max_iter):
         prev_merit = cur_merit
         try:
-            prob.solve(*args, **kwargs)
-            # print "post solve cost", idx, k, orig_prob.objective.value
+            # prob.solve(*args, **kwargs)
+            x0 = {var.id: var.z.value.A1 - var.u.value.A1 for var in noncvx_vars}
+            x1 = prox.do(x0, rho_val)
+            for var in orig_prob.variables():
+                var.value = x1[var.id]
+            print "post solve cost", idx, k, orig_prob.objective.value
         except cvx.SolverError, e:
             pass
-        if prob.status in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-
+        if prox.info['status'] in ['Solved', 'Solved/Inaccurate']:
             for var in noncvx_vars:
                 var.z.value = var.project(alpha*var.value + (1-alpha)*old_vars[var.id] + var.u.value)
                 # var.z.value = var.project(np.random.randn(*var.size))
@@ -129,7 +133,7 @@ def admm_inner_iter(data):
                 return best_so_far
 
         else:
-            print prob.status
+            print prox.info['status']
             break
 
     return best_so_far
@@ -215,19 +219,21 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
     if show_progress:
         print "lower bound =", lower_bound
 
+    xvars = {var.id: var for var in get_noncvx_vars(rel_prob)}
+    prox = Prox(rel_prob, xvars)
     # Algorithm.
     if parallel:
         pool = multiprocessing.Pool(num_procs)
         tmp_prob = cvx.Problem(rel_prob.objective, rel_prob.constraints)
         best_per_rho = pool.map(admm_inner_iter,
-            [(idx, tmp_prob, rho_val, gamma, max_iter,
+            [(idx, tmp_prob, prox, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
               prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:
         best_per_rho = map(admm_inner_iter,
-            [(idx, rel_prob, rho_val, gamma, max_iter,
+            [(idx, rel_prob, prox, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress,
               prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.

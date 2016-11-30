@@ -19,9 +19,12 @@ weight = w * x
 constraints = [A * y >= x]
 prob = Problem(Maximize(weight), constraints)
 
-prob.solve(method="NC-ADMM")
+import time
+start = time.time()
+prob.solve(method="NC-ADMM", parallel=False, verbose=True, polish_depth=0)
+end = time.time()
 print "NC-ADMM solution = ", weight.value
-
+print end - start
 # Gurobi (uncomment code below)
 x = Bool(n)
 y = Bool(m)
