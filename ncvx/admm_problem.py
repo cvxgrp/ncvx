@@ -97,12 +97,12 @@ def admm_inner_iter(data):
             if only_discrete(orig_prob):
                 # cur_merit = orig_prob.objective.value
                 # sltn = {v.id:v.value for v in orig_prob.variables()}
-                cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
-                                                  idx, polish_depth)
-                # sltn = old_vars.values()[0]
-                # for i in range(polish_depth):
-                #     cur_merit, sltn = neighbor_func(sltn)
-                # sltn = {old_vars.keys()[0]: sltn}
+                # cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
+                #                                   idx, polish_depth)
+                sltn = old_vars.values()[0]
+                for i in range(polish_depth):
+                    cur_merit, sltn = neighbor_func(sltn)
+                sltn = {old_vars.keys()[0]: sltn}
             else:
                 # Try to polish.
                 try:
