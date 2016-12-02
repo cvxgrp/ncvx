@@ -42,7 +42,7 @@ def get_constr_error(constr):
 
 def admm_inner_iter(data):
     (idx, orig_prob, prox, rho_val, gamma_merit, max_iter,
-    random_z, polish_best, seed, sigma, show_progress,
+     random_z, polish_best, seed, sigma, show_progress, neighbor_func,
     prox_polished, polish_depth, lower_bound, alpha, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
@@ -95,7 +95,14 @@ def admm_inner_iter(data):
             old_vars = {var.id:var.value for var in orig_prob.variables()}
 
             if only_discrete(orig_prob):
-                cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far, idx, polish_depth)
+                # cur_merit = orig_prob.objective.value
+                # sltn = {v.id:v.value for v in orig_prob.variables()}
+                cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
+                                                  idx, polish_depth)
+                # sltn = old_vars.values()[0]
+                # for i in range(polish_depth):
+                #     cur_merit, sltn = neighbor_func(sltn)
+                # sltn = {old_vars.keys()[0]: sltn}
             else:
                 # Try to polish.
                 try:
@@ -194,7 +201,7 @@ def only_discrete(prob):
 def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
          random=False, sigma=1.0, gamma=1e6, polish_best=True,
          num_procs=None, parallel=True, seed=1, show_progress=False,
-         prox_polished=False, polish_depth=5,
+         prox_polished=False, polish_depth=5, neighbor_func=None,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -227,14 +234,14 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
         tmp_prob = cvx.Problem(rel_prob.objective, rel_prob.constraints)
         best_per_rho = pool.map(admm_inner_iter,
             [(idx, tmp_prob, prox, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, show_progress,
+              random, polish_best, seed, sigma, show_progress, neighbor_func,
               prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:
         best_per_rho = map(admm_inner_iter,
             [(idx, rel_prob, prox, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, show_progress,
+              random, polish_best, seed, sigma, show_progress, neighbor_func,
               prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]

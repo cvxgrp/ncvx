@@ -22,6 +22,7 @@ import cvxopt
 import numpy as np
 from itertools import product
 import cvxpy as cvx
+import numba
 
 class Choose(Boolean):
     """ A variable with k 1's and all other entries 0. """
@@ -39,12 +40,10 @@ class Choose(Boolean):
 
     # The k-largest values are set to 1. The remainder are set to 0.
     def _project(self, matrix):
-        indices = product(xrange(self.size[0]), xrange(self.size[1]))
-        v_ind = sorted(indices, key=lambda ind: -matrix[ind])
-        result = np.zeros(self.size)
-        for ind in v_ind[0:self.k]:
-            result[ind] = 1
-        return result
+        indices = matrix.argsort()
+        matrix[indices[0:self.k]] = 1
+        matrix[indices[self.k:]] = 0
+        return matrix
 
     # In the relaxation, we have 0 <= var <= 1.
     def relax(self):

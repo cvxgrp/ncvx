@@ -5,7 +5,7 @@ import numpy as np
 np.random.seed(1)
 
 # Generating problem data
-p = 1.0 / 10 # each set contains np emelements (10% of the elements) in expectation
+p = 1.0 / 10 # each set contains np elements (10% of the elements) in expectation
 m = int(3 / p)  # total number of elements in all sets (with repetition) is mnp ~ 3n
 k = int(1/(3*p))  # if you choose k sets randomly they contain knp ~ n/3 element in expectation
 n = 100
@@ -21,7 +21,7 @@ prob = Problem(Maximize(weight), constraints)
 
 import time
 start = time.time()
-prob.solve(method="NC-ADMM", parallel=False, verbose=True, polish_depth=0)
+prob.solve(method="NC-ADMM", parallel=False, verbose=True, polish_depth=0, restarts=1)
 end = time.time()
 print "NC-ADMM solution = ", weight.value
 print end - start
@@ -32,5 +32,5 @@ weight = w * x
 constraints = [sum(y) <= k, A * y >= x]
 prob = Problem(Maximize(weight), constraints)
 
-prob.solve(solver = GUROBI)
+prob.solve(solver = GUROBI, verbose=True)
 print "GUROBI solution = ", weight.value
