@@ -40,6 +40,7 @@ def neighbor_func(z_val):
             resid2 = resid + op*A[:, i]
             rmax = resid2.max()
             if obj2 < best_merit and rmax < 1e-3:
+                print best_merit
                 best_merit = obj2
                 best_sltn = i, op
     if best_sltn is not None:
@@ -50,7 +51,7 @@ def neighbor_func(z_val):
 # NC-ADMM heuristic
 start = time.time()
 val, resid = prob.solve(method="NC-ADMM", polish_depth=5, show_progress=True, parallel=False,
-                        neighbor_func=neighbor_func, max_iters=25, restarts=5)
+                        neighbor_func=neighbor_func, max_iter=25, restarts=5)
 print "NC-ADMM residual =", resid
 print "NC-ADMM value =", val
 print time.time() - start

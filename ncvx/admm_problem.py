@@ -42,8 +42,8 @@ def get_constr_error(constr):
 
 def admm_inner_iter(data):
     (idx, orig_prob, prox, rho_val, gamma_merit, max_iter,
-     random_z, polish_best, seed, sigma, show_progress, neighbor_func,
-    prox_polished, polish_depth, lower_bound, alpha, args, kwargs) = data
+     random_z, polish_best, seed, sigma, show_progress, neighbor_func, polish_func,
+     prox_polished, polish_depth, lower_bound, alpha, args, kwargs) = data
     noncvx_vars = get_noncvx_vars(orig_prob)
 
     np.random.seed(idx + seed)
@@ -78,10 +78,14 @@ def admm_inner_iter(data):
         prev_merit = cur_merit
         try:
             # prob.solve(*args, **kwargs)
-            x0 = {var.id: var.z.value.A1 - var.u.value.A1 for var in noncvx_vars}
-            x1 = prox.do(x0, rho_val)
+            x0 = {}
             for var in orig_prob.variables():
-                var.value = x1[var.id]
+                x0[var.id] = var.value
+            for var in noncvx_vars:
+                x0[var.id] = var.z.value.A1 - var.u.value.A1
+            x1 = prox(x0, rho_val)
+            for var in orig_prob.variables():
+                var.value = np.reshape(x1[var.id], var.size, order='F')
             print "post solve cost", idx, k, orig_prob.objective.value
         except cvx.SolverError, e:
             pass
@@ -95,36 +99,43 @@ def admm_inner_iter(data):
             old_vars = {var.id:var.value for var in orig_prob.variables()}
 
             if only_discrete(orig_prob):
-                # cur_merit = orig_prob.objective.value
-                # sltn = {v.id:v.value for v in orig_prob.variables()}
                 if neighbor_func is None:
                     cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
-                                                    idx, polish_depth)
+                                                      idx, polish_depth)
                 else:
-                    sltn = old_vars.values()[0]
+                    sltn = noncvx_vars[0].z.value
                     for i in range(polish_depth):
                         cur_merit, sltn = neighbor_func(sltn)
-                    sltn = {old_vars.keys()[0]: sltn}
+                    sltn = {noncvx_vars[0].id: sltn}
             else:
-                # Try to polish.
-                try:
-                    polish_opt_val, status = polish(orig_prob, polish_depth, *args, **kwargs)
-                    # print "post polish cost", idx, k, orig_prob.objective.value
-                except cvx.SolverError, e:
-                    polish_opt_val = None
-                    status = cvx.SOLVER_ERROR
+                if polish_func is None:
+                    # Try to polish.
+                    try:
+                        polish_opt_val, status = polish(orig_prob, polish_depth, *args, **kwargs)
+                        # print "post polish cost", idx, k, orig_prob.objective.value
+                    except cvx.SolverError, e:
+                        polish_opt_val = None
+                        status = cvx.SOLVER_ERROR
 
-                # print "polish_opt_val", polish_opt_val
-                if status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-                    # Undo change in var.value.
+                    # print "polish_opt_val", polish_opt_val
+                    if status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+                        # Undo change in var.value.
+                        for var in orig_prob.variables():
+                            if isinstance(var, NonCvxVariable):
+                                var.value = var.z.value
+                            else:
+                                var.value = old_vars[var.id]
+
+                    cur_merit = merit_func.value
+                    sltn = {v.id:v.value for v in orig_prob.variables()}
+                else:
+                    sltn = {}
                     for var in orig_prob.variables():
-                        if isinstance(var, NonCvxVariable):
-                            var.value = var.z.value
-                        else:
-                            var.value = old_vars[var.id]
-
-                cur_merit = merit_func.value
-                sltn = {v.id:v.value for v in orig_prob.variables()}
+                        sltn[var.id] = var.value
+                    for var in noncvx_vars:
+                        sltn[var.id] = var.z.value
+                    for i in range(polish_depth):
+                        cur_merit, sltn = polish_func(sltn)
 
             if show_progress and idx == 0:
                 print "objective", idx, k, cur_merit, best_so_far[0]
@@ -203,7 +214,8 @@ def only_discrete(prob):
 def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
          random=False, sigma=1.0, gamma=1e6, polish_best=True,
          num_procs=None, parallel=True, seed=1, show_progress=False,
-         prox_polished=False, polish_depth=5, neighbor_func=None,
+         prox_polished=False, polish_depth=5,
+         neighbor_func=None, polish_func=None,
          *args, **kwargs):
     # rho is a list of values, one for each restart.
     if rho is None:
@@ -228,7 +240,7 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
     if show_progress:
         print "lower bound =", lower_bound
 
-    xvars = {var.id: var for var in get_noncvx_vars(rel_prob)}
+    xvars = {var.id: var for var in rel_prob.variables()}
     prox = Prox(rel_prob, xvars)
     # Algorithm.
     if parallel:
@@ -236,14 +248,14 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
         tmp_prob = cvx.Problem(rel_prob.objective, rel_prob.constraints)
         best_per_rho = pool.map(admm_inner_iter,
             [(idx, tmp_prob, prox, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, show_progress, neighbor_func,
+              random, polish_best, seed, sigma, show_progress, neighbor_func, polish_func,
               prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
         pool.close()
         pool.join()
     else:
         best_per_rho = map(admm_inner_iter,
             [(idx, rel_prob, prox, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, show_progress, neighbor_func,
+              random, polish_best, seed, sigma, show_progress, neighbor_func, polish_func,
               prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]

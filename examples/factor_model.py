@@ -16,7 +16,7 @@ D_true = np.random.exponential(1, size=(n, 1))
 Sigma_true = F.dot(F.T) + np.diag(D_true)
 variance = norm(Sigma_true, 'fro').value/(np.sqrt(n*n)*SNR)
 noise = np.random.normal(0, variance, size=(n,n))
-Sigma = Sigma_true + noise
+Sigma = Sigma_true + (noise + noise.T)/2
 
 
 # NC-ADMM heuristic
@@ -25,8 +25,32 @@ D_vec = Variable(n); D = diag(D_vec)
 cost = sum_squares(Sigma - Sigma_lr - D)
 constraints = [D_vec >= 0, Sigma_lr >> 0]
 prob = Problem(Minimize(cost), constraints)
-prob.solve(method="NC-ADMM", solver=SCS, show_progress=True)
+
+def polish_func(sltn):
+    matrix = sltn[Sigma_lr.id]
+    w, V = np.linalg.eigh(matrix)
+    w_sorted_idxs = np.argsort(-w)
+    pos_w = w[w_sorted_idxs[:k]]
+    pos_V = V[:,w_sorted_idxs[:k]]
+    Sigma_tmp = Symmetric(k, k)
+    Sigma_small = pos_V*Sigma_tmp*pos_V.T
+
+    D_vec2 = Variable(n); D = diag(D_vec)
+    cost2 = sum_squares(Sigma - Sigma_small - D)
+    constraints2 = [D_vec2 >= 0, Sigma_lr >> 0]
+    prob = Problem(Minimize(cost2), constraints2)
+    prob.solve(solver=SCS)
+    return cost2.value, {Sigma_lr.id: Sigma_small.value, D_vec.id: D_vec2.value}
+
+prob.solve(method="NC-ADMM", solver=SCS, show_progress=True, parallel=False,
+           restarts=1, max_iter=10, polish_func=polish_func, polish_depth=1)
+Sigma_lr.value = Sigma_lr.project(Sigma_lr.value)
 print "NC-ADMM value", cost.value
+
+w, V = np.linalg.eigh(Sigma_lr.value)
+print w
+print sum_squares(Sigma - Sigma_lr).value
+print sum_squares(Sigma - Sigma_lr.project(Sigma)).value
 
 # Relax-round-polish heuristic
 prob.solve(method="relax-round-polish", solver=SCS)
