@@ -86,7 +86,7 @@ def admm_inner_iter(data):
             x1 = prox(x0, rho_val)
             for var in orig_prob.variables():
                 var.value = np.reshape(x1[var.id], var.size, order='F')
-            print "post solve cost", idx, k, orig_prob.objective.value
+            # print "post solve cost", idx, k, orig_prob.objective.value
         except cvx.SolverError, e:
             pass
         if prox.info['status'] in ['Solved', 'Solved/Inaccurate']:
@@ -103,7 +103,8 @@ def admm_inner_iter(data):
                     cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
                                                       idx, polish_depth)
                 else:
-                    sltn = noncvx_vars[0].z.value
+                    sltn = noncvx_vars[0].z.value.A
+
                     for i in range(polish_depth):
                         cur_merit, sltn = neighbor_func(sltn)
                     sltn = {noncvx_vars[0].id: sltn}

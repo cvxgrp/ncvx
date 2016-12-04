@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Traveling salesman problem.
 np.random.seed(1)
-n = 35
+n = 30
 
 # Get locations.
 x = np.random.uniform(-1, 1, size=(n,1))
@@ -23,8 +23,51 @@ for i in range(n):
 P = Tour(n)
 cost = vec(D).T*vec(P)
 prob = Problem(Minimize(cost), [])
-result = prob.solve(method="NC-ADMM", solver = SCS,
-                    show_progress=True)
+
+
+
+def neighbor_func(Z):
+    best_merit = np.dot(D.ravel(), Z.ravel())
+    idxs = np.argmax(Z, axis=1)
+    best_diff = 0
+    for a in range(Z.shape[0]):
+        """Swap a->b->c->d to a->c->b->d
+        """
+        b = idxs[a]
+        c = idxs[b]
+        d = idxs[c]
+        diff = D[a, c] + D[b, d] - D[a, b] - D[c, d]
+        if (diff < best_diff):
+            best_diff = diff
+            a_candid = a
+            b_candid = b
+            c_candid = c
+            d_candid = d
+
+    if (best_diff < 0):
+        best_merit += diff
+        Z[a_candid, c_candid] = 1
+        Z[a_candid, b_candid] = 0
+
+        Z[b_candid, d_candid] = 1
+        Z[b_candid, c_candid] = 0
+
+        Z[c_candid, b_candid] = 1
+        Z[c_candid, d_candid] = 0
+        print Z
+
+
+    return best_merit, Z
+
+
+
+
+
+
+
+
+val, result = prob.solve(method="NC-ADMM", polish_depth=5, solver = SCS,
+                    show_progress=True, neighbor_func=neighbor_func, parallel=False)
 print "final value", cost.value
 
 # Plotting
@@ -33,4 +76,5 @@ for i in range(n):
     plt.plot([X[0,i], ordered[0,i]],
              [X[1,i], ordered[1,i]],
              color = 'brown', marker = 'o')
+
 plt.show()
