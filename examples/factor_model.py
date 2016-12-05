@@ -35,21 +35,22 @@ def polish_func(sltn):
     Sigma_tmp = Symmetric(k, k)
     Sigma_small = pos_V*Sigma_tmp*pos_V.T
 
-    D_vec2 = Variable(n); D = diag(D_vec)
-    cost2 = sum_squares(Sigma - Sigma_small - D)
-    constraints2 = [D_vec2 >= 0, Sigma_lr >> 0]
-    prob = Problem(Minimize(cost2), constraints2)
-    prob.solve(solver=SCS)
-    return cost2.value, {Sigma_lr.id: Sigma_small.value, D_vec.id: D_vec2.value}
+    D_vec2 = Variable(n); D = diag(D_vec2)
+    cost = sum_squares(Sigma - Sigma_small - D)
+    constraints = [D_vec >= 0, Sigma_lr >> 0]
+    prob = Problem(Minimize(cost), constraints)
+    result = prob.solve(solver=SCS)
+    return result, {Sigma_lr.id: Sigma_small.value, D_vec.id: D_vec2.value}
 
 prob.solve(method="NC-ADMM", solver=SCS, show_progress=True, parallel=False,
-           restarts=1, max_iter=10, polish_func=polish_func, polish_depth=1)
+           restarts=1, max_iter=10, polish_func=polish_func, polish_depth=10)
 Sigma_lr.value = Sigma_lr.project(Sigma_lr.value)
+D_vec.value = pos(D_vec).value
 print "NC-ADMM value", cost.value
 
 w, V = np.linalg.eigh(Sigma_lr.value)
-print w
-print sum_squares(Sigma - Sigma_lr).value
+print w, D_vec.value
+print sum_squares(Sigma - Sigma_lr - D).value
 print sum_squares(Sigma - Sigma_lr.project(Sigma)).value
 
 # Relax-round-polish heuristic
