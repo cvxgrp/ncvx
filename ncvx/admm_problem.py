@@ -144,7 +144,7 @@ def admm_inner_iter(data):
                     prev_merit = np.inf
                     for i in range(polish_depth):
                         cur_merit, sltn = polish_func(sltn)
-                        if (prev_merit - cur_merit)/(prev_merit + 1) < 1e-3:
+                        if (prev_merit - cur_merit)/(prev_merit + 1) < 1e-5:
                             break
                         prev_merit = cur_merit
 
