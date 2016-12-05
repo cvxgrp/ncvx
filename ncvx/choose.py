@@ -18,11 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .boolean import Boolean
-import cvxopt
-import numpy as np
-from itertools import product
 import cvxpy as cvx
-import numba
 
 class Choose(Boolean):
     """ A variable with k 1's and all other entries 0. """
