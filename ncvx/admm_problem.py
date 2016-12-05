@@ -108,6 +108,7 @@ def admm_inner_iter(data):
                 else:
                     sltn = noncvx_vars[0].z.value
                     prev_merit = np.inf
+
                     for i in range(polish_depth):
                         cur_merit, sltn = neighbor_func(sltn)
                         if (prev_merit - cur_merit)/(prev_merit + 1) < 1e-3:
