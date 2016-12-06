@@ -53,6 +53,7 @@ def admm_inner_iter(data):
     merit_func = orig_prob.objective.args[0]
     for constr in orig_prob.constraints:
         merit_func += gamma_merit*get_constr_error(constr)
+
     # Form ADMM problem.
     # obj = orig_prob.objective.args[0]
     # for var in noncvx_vars:
@@ -99,14 +100,14 @@ def admm_inner_iter(data):
                 # var.z.value = var.project(np.random.uniform(0, 1, size=var.size))
                 var.u.value += alpha*var.value + (1-alpha)*old_vars[var.id] - var.z.value
             # Update previous iterate.
-            old_vars = {var.id:var.value for var in orig_prob.variables()}
+            old_vars = {var.id: var.value for var in orig_prob.variables()}
 
             if only_discrete(orig_prob):
                 if neighbor_func is None:
                     cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
                                                       idx, polish_depth)
                 else:
-                    sltn = noncvx_vars[0].z.value
+                    sltn = noncvx_vars[0].z.value.A.copy()
                     prev_merit = np.inf
 
                     for i in range(polish_depth):
@@ -170,7 +171,7 @@ def admm_inner_iter(data):
 
     return best_so_far
 
-def neighbor_search(merit_func, old_vars, global_best, idx, max_depth, show_progress=False):
+def neighbor_search(merit_func, old_vars, global_best, idx, max_depth, show_progress=True):
     nonconvex_vars = get_noncvx_vars(merit_func)
     for var in nonconvex_vars:
         var.value = var.z.value
