@@ -27,7 +27,7 @@ cost = c.T*z
 constraints = [z >= 0, A*z <= b]
 prob = Problem(Maximize(cost), constraints)
 
-def neighbor_func(z_val):
+def neighbor_func(z_val, cur_merit):
     # Special function for evaluating neighbors.
     resid = np.dot(A, z_val) - b
     obj = -np.dot(c.T, z_val)

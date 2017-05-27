@@ -106,7 +106,7 @@ def admm_inner_iter(data):
                 if polish_depth == 0:
                     noncvx_vars[0].value = noncvx_vars[0].z.value
                     cur_merit = orig_prob.objective.value
-                    sltn = {noncvx_vars[0].id: noncvx_vars[0].value}
+                    sltn = {var.id: var.value for var in orig_prob.variables()}
                 elif neighbor_func is None:
                     cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
                                                       idx, polish_depth)
