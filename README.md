@@ -1,13 +1,13 @@
 NCVX
 ====
 
-NCVX is a package for modeling and solving problems with convex objectives and decision variables from a nonconvex set. This package provides heuristic such as NC-ADMM (a variation of alternating direction method of multipliers for nonconvex problems) and relax-round-polish, which can be viewed as a majorization-minimization algorithm. The solver methods provided and the syntax for constructing problems are discussed in [our associated paper](http://stanford.edu/~boyd/papers/ncvx.html).
+NCVX is a package for modeling and solving problems with convex objectives and decision variables from a nonconvex set. This package provides heuristics such as NC-ADMM (a variation of alternating direction method of multipliers for nonconvex problems) and relax-round-polish, which can be viewed as a majorization-minimization algorithm. The solver methods provided and the syntax for constructing problems are discussed in [our associated paper](http://stanford.edu/~boyd/papers/ncvx.html).
 
 NCVX is built on top of [CVXPY](http://www.cvxpy.org/), a domain-specific language for convex optimization embedded in Python.
 
 Installation
 ------------
-You should first install CVXPY. CVXPY install guid can be found [here](http://www.cvxpy.org/). If you already have CVXPY, make sure you have the latest version by running ``pip install —upgrade cvxpy``. 
+You should first install CVXPY. CVXPY install guide can be found [here](http://www.cvxpy.org/). If you already have CVXPY, make sure you have the latest version by running ``pip install --upgrade cvxpy``.
 
 The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder. The package has CVXPY and munkres as dependencies.
 
@@ -42,13 +42,13 @@ print x.value
 
 Variable constructors
 ---------------------
-The following set are supported by NCVX at the moment:
-* ``Boolean(n)`` creates a variable with ``n`` Boolean components. 
-* ``integer(n,M)`` creates a variable with ``n`` integer components between ``-M`` and ``M``.
+The following sets are supported by NCVX at the moment:
+* ``Boolean(n)`` creates a variable with ``n`` Boolean components.
+* ``integer(n, M)`` creates a variable with ``n`` integer components between ``-M`` and ``M``.
 * ``Card(n, k, M)`` creates a variable with ``n`` components, with the implicit constraint that at most ``k`` entries are nonzero and all entries are between ``-M`` and ``M``.
 * ``Choose(n, k)`` creates a variable with ``n`` Boolean components, with the implicit constraint that it has exactly ``k`` nonozero entries.
-* ``Annulus(n,r,R)`` creates a variable with ``n`` componentsm with the implicit constraint that its Euclidean norm is between ``r`` and ``R``.
-* ``Sphere(n, r)`` creates a variable with ``n`` componentsm with the implicit constraint that its Euclidean norm is equal to ``r``.
+* ``Annulus(n, r, R)`` creates a variable with ``n`` components with the implicit constraint that its Euclidean norm is between ``r`` and ``R``.
+* ``Sphere(n, r)`` creates a variable with ``n`` components with the implicit constraint that its Euclidean norm is equal to ``r``.
 * ``Rank(m, n, k, M)`` creates a ``m x n`` matrix variable with the implicit constraints that its rank is at most ``k`` and its Euclidean norm is at most ``M``.
 * ``Assign(m, n) `` creates a ``m x n`` matrix variable with the implicit constraint that it is an assignment matrix.
 * ``Permute(n)`` creates a ``n x n`` matrix variable with the implicit constraint that it is a permutation matrix.
@@ -64,10 +64,10 @@ Each variable supports the following methods:
 * ``variable.project(z)`` returns the Euclidean (or approximate) projection of ``z`` onto the nonconvex set C, to which the variable belongs.
 * ``variable.restrict(z)`` returns a list of convex constraints describing the convex restriction at ``z`` of the nonconvex set, to which the variable belongs.
 * ``variable.neighbors(z)`` returns a list of neighbors of ``z`` contained in the nonconvex set, to which the variable belongs.
- 
+
 Constructing and solving problems
 ---------------------------------
 The components of the variable, the objective, and the constraints are constructed using standard CVXPY syntax. Once the user has constructed a problem object, they can apply the following solve methods:
 * ``problem.solve(method="relax")`` solves the convex relaxation of the problem.
 * ``problem.solve(method="relax-round-polish")`` applies the relax-round-polish heuristic. Additional arguments can be used to specify the parameters.
-* ``problem.solve(method="NC-ADMM")`` applies the NC-ADMM heuristic. Additional arguments can be used to specify the number of starting points, the number of iterations the algorithm is run from each starting point.
+* ``problem.solve(method="NC-ADMM")`` applies the NC-ADMM heuristic. Additional arguments can be used to specify the number of starting points and the number of iterations the algorithm is run from each starting point.
