@@ -26,7 +26,7 @@ prob = Problem(Minimize(cost), [])
 
 
 
-def neighbor_func(Z):
+def neighbor_func(Z, cur_merit):
     best_merit = np.dot(D.ravel(), Z.ravel())
     idxs = np.argmax(Z, axis=1)
     best_diff = 0
