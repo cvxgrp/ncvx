@@ -87,7 +87,7 @@ def admm_inner_iter(data):
                 x0[var.id] = var.value
             for var in noncvx_vars:
                 x0[var.id] = var.z.value.A1 - var.u.value.A1
-            x1 = prox.do(x0, rho_val)
+            x1 = prox(x0, rho_val)
             for var in orig_prob.variables():
                 var.value = np.reshape(x1[var.id], var.size, order='F')
             # print "post solve cost", idx, k, orig_prob.objective.value
