@@ -18,6 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .boolean import Boolean
+import numpy as np
 import cvxpy as cvx
 
 class Choose(Boolean):
@@ -36,9 +37,10 @@ class Choose(Boolean):
 
     # The k-largest values are set to 1. The remainder are set to 0.
     def _project(self, matrix):
-        indices = matrix.argsort()
-        matrix[indices[0:self.k]] = 1
-        matrix[indices[self.k:]] = 0
+        lin_index = np.squeeze(np.asarray(matrix)).flatten().argsort()[::-1]
+        sub_index = np.unravel_index(lin_index[:self.k], matrix.shape)
+        matrix[:] = 0.0
+        matrix[sub_index] = 1.0
         return matrix
 
     # In the relaxation, we have 0 <= var <= 1.
