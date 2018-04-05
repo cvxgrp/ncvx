@@ -37,8 +37,7 @@ class Boolean(NonCvxVariable):
 
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
-        # return [self == matrix]
-        return [norm(self - matrix, 1) <= 1]
+        return [self == matrix]
 
     def _neighbors(self, matrix):
         neighbors_list = []

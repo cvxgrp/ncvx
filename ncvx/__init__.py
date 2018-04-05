@@ -23,6 +23,7 @@ from .assign import Assign
 from .boolean import Boolean
 from .card import Card
 from .choose import Choose
+from .group_assign import GroupAssign
 from .integer import Integer
 from .orthog import Orthog
 from .partition import Partition

@@ -17,18 +17,15 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __future__ import division
-from noncvx_variable import NonCvxVariable
-from boolean import Boolean
+
+from .noncvx_variable import NonCvxVariable
+from .boolean import Boolean
 import multiprocessing
 import cvxpy as cvx
 import numpy as np
 import random
 from scsprox import Prox
-try:
-    from Queue import PriorityQueue
-except:
-    from queue import PriorityQueue
+from queue import PriorityQueue
 
 def get_constr_error(constr):
     if isinstance(constr, cvx.constraints.EqConstraint):
@@ -91,7 +88,7 @@ def admm_inner_iter(data):
             for var in orig_prob.variables():
                 var.value = np.reshape(x1[var.id], var.size, order='F')
             # print "post solve cost", idx, k, orig_prob.objective.value
-        except cvx.SolverError, e:
+        except cvx.SolverError as e:
             pass
         if prox.info['status'] in ['Solved', 'Solved/Inaccurate']:
             for var in noncvx_vars:
@@ -127,7 +124,7 @@ def admm_inner_iter(data):
                     try:
                         polish_opt_val, status = polish(orig_prob, polish_depth, *args, **kwargs)
                         # print "post polish cost", idx, k, orig_prob.objective.value
-                    except cvx.SolverError, e:
+                    except cvx.SolverError as e:
                         polish_opt_val = None
                         status = cvx.SOLVER_ERROR
 
@@ -156,7 +153,7 @@ def admm_inner_iter(data):
                         prev_merit = cur_merit
 
             if show_progress and idx == 0:
-                print "objective", idx, k, cur_merit, best_so_far[0]
+                print("objective", idx, k, cur_merit, best_so_far[0])
             if cur_merit < best_so_far[0]:
                 best_so_far[0] = cur_merit
                 best_so_far[1] = sltn
@@ -171,7 +168,7 @@ def admm_inner_iter(data):
                 return best_so_far
 
         else:
-            print prox.info['status']
+            print(prox.info['status'])
             break
 
     return best_so_far
@@ -190,7 +187,7 @@ def neighbor_search(merit_func, old_vars, global_best, idx, max_depth, show_prog
         count += 1
         if merit < best_so_far[0]:# and merit < global_best[0]:
             if idx == 0 and show_progress:
-                print merit, count
+                print(merit, count)
             best_so_far[0] = merit
             best_so_far[1] = sltn
             if node_depth < max_depth:
@@ -258,7 +255,7 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
     # lower_bound = rel_prob.solve(*args, **kwargs)
     lower_bound = -np.inf
     if show_progress:
-        print "lower bound =", lower_bound
+        print("lower bound =", lower_bound)
 
     # Algorithm.
     if parallel:
@@ -273,10 +270,10 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
     else:
         xvars = {var.id: var for var in rel_prob.variables()}
         prox = Prox(rel_prob, xvars)
-        best_per_rho = map(admm_inner_iter,
+        best_per_rho = list(map(admm_inner_iter,
             [(idx, rel_prob, prox, rho_val, gamma, max_iter,
               random, polish_best, seed, sigma, show_progress, neighbor_func, polish_func,
-              prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
+              prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)]))
     # Merge best so far.
     argmin = min([(val[0], idx) for idx, val in enumerate(best_per_rho)])[1]
     best_so_far = best_per_rho[argmin]
@@ -371,7 +368,7 @@ def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5,
                 try:
                     polish_opt_val, status = polish(rel_prob, polish_depth, *args, **kwargs)
                     # print "post polish cost", idx, k, rel_prob.objective.value
-                except cvx.SolverError, e:
+                except cvx.SolverError as e:
                     polish_opt_val = None
                     status = cvx.SOLVER_ERROR
 

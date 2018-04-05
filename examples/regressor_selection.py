@@ -8,11 +8,11 @@ random.seed(1)
 
 # Generating problem data
 m = 65; n = 2*m; k = n//10
-print "m =", m, ", n =", n, ", k =", k
+print("m =", m, ", n =", n, ", k =", k)
 SNR = 20; M = 1
 A = np.random.randn(m, n)
 x_true = np.random.uniform(-1, 1, size=(n,1))
-zeros = random.sample(range(n), n-k)
+zeros = random.sample(list(range(n)), n-k)
 x_true[zeros] = 0
 sigma = norm(A.dot(x_true), 2).value/(np.sqrt(n)*SNR)
 noise = np.random.normal(0, sigma, size=(m,1))
@@ -26,9 +26,9 @@ b = A.dot(x_true) + noise
 #cost = sum_squares(A*x - b)
 #prob = Problem(Minimize(cost), constr)
 #prob.solve(solver=GUROBI, TimeLimit = 60)
-#print "Gurobi value =", cost.value
-#print "Gurobi solution =\n", np.around(x.value.T, decimals=3)
-#print "--------------------------------------------------------------------"
+#print("Gurobi value =", cost.value)
+#print("Gurobi solution =\n", np.around(x.value.T, decimals=3))
+#print("--------------------------------------------------------------------")
 
 # NC-ADMM heuristic.
 x = Card(n, k, M)
@@ -36,15 +36,15 @@ cost = sum_squares(A*x - b)
 prob = Problem(Minimize(cost))
 RESTARTS = 5; ITERS = 50
 prob.solve(method="NC-ADMM", restarts=RESTARTS, num_procs = 5, max_iter=ITERS)
-print "NC-ADMM value =", cost.value
-print "NC-ADMM solution =\n", np.around(x.value.T, decimals=3)
-print "--------------------------------------------------------------------"
+print("NC-ADMM value =", cost.value)
+print("NC-ADMM solution =\n", np.around(x.value.T, decimals=3))
+print("--------------------------------------------------------------------")
 
 # Relax-round-polish heurisitc
 prob.solve(method="relax-round-polish")
-print "Relax-round-polish value =", cost.value
-print "Relax-round-polish solution =\n", np.around(x.value.T, decimals=3)
-print "--------------------------------------------------------------------"
+print("Relax-round-polish value =", cost.value)
+print("Relax-round-polish solution =\n", np.around(x.value.T, decimals=3))
+print("--------------------------------------------------------------------")
 
 # Lasso heuristic
 gamma = Parameter(sign="positive")
@@ -64,7 +64,7 @@ for gamma_val in np.logspace(-2,4,num=100):
         found_card = True
         break
 assert found_card
-print "Lasso value =", cost.value
-print "Lasso solution =\n", np.around(x.value.T, decimals=3)
+print("Lasso value =", cost.value)
+print("Lasso solution =\n", np.around(x.value.T, decimals=3))
 
 

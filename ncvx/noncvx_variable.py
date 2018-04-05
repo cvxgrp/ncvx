@@ -21,9 +21,10 @@ import abc
 import cvxpy
 import cvxpy.interface as intf
 import numpy as np
+from six import with_metaclass
 
-class NonCvxVariable(cvxpy.Variable):
-    __metaclass__ = abc.ABCMeta
+
+class NonCvxVariable(with_metaclass(abc.ABCMeta, cvxpy.Variable)):
     def __init__(self, *args, **kwargs):
         super(NonCvxVariable, self).__init__(*args, **kwargs)
         self.noncvx = True
