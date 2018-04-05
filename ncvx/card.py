@@ -44,7 +44,7 @@ class Card(NonCvxVariable):
 
     # All values except k-largest (by magnitude) set to zero.
     def _project(self, matrix):
-        indices = product(xrange(self.size[0]), xrange(self.size[1]))
+        indices = product(list(range(self.size[0])), list(range(self.size[1])))
         v_ind = sorted(indices, key=lambda ind: -abs(matrix[ind]))
         result = matrix.copy()
         for ind in v_ind[self.k:]:

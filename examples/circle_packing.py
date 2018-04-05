@@ -12,12 +12,12 @@ y_vals = [cp.Variable() for i in range(N)]
 
 objective = cp.Minimize(cp.max_elemwise( *(x_vals + y_vals) ) + 0.5)
 constraints = []
-for i in xrange(N):
+for i in range(N):
     constraints  += [0.5*r[i] <= x_vals[i],
                      0.5*r[i] <= y_vals[i]]
 diff_vars = []
-for i in xrange(N-1):
-    for j in xrange(i+1,N):
+for i in range(N-1):
+    for j in range(i+1,N):
         t = cp.Variable()
         diff_vars.append(ncvx.Annulus(2, 0.5 * (r[i]+r[j]), N))
         constraints += [
@@ -29,7 +29,7 @@ result = prob.solve(method="relax-round-polish", polish_depth=100)
 
 #plot the circles
 circ = np.linspace(0,2 * np.pi)
-for i in xrange(N):
+for i in range(N):
     plt.plot(x_vals[i].value+0.5*r[i]*np.cos(circ),y_vals[i].value+0.5*r[i]*np.sin(circ),'b')
 plt.xlim([0,objective.value])
 plt.ylim([0,objective.value])

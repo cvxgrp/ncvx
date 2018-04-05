@@ -23,8 +23,8 @@ import time
 start = time.time()
 prob.solve(method="NC-ADMM", parallel=False, verbose=True, polish_depth=0, restarts=1)
 end = time.time()
-print "NC-ADMM solution = ", weight.value
-print end - start
+print("NC-ADMM solution = ", weight.value)
+print(end - start)
 # Gurobi (uncomment code below)
 x = Bool(n)
 y = Bool(m)
@@ -33,4 +33,4 @@ constraints = [sum(y) <= k, A * y >= x]
 prob = Problem(Maximize(weight), constraints)
 
 prob.solve(solver = GUROBI, verbose=True)
-print "GUROBI solution = ", weight.value
+print("GUROBI solution = ", weight.value)
