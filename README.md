@@ -11,7 +11,7 @@ You should first install CVXPY. CVXPY install guide can be found [here](http://w
 
 Then install ``scsprox`` from source [here](https://github.com/SteveDiamond/scsprox).
 
-The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder. The package has CVXPY and munkres as dependencies.
+The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder. The package has CVXPY and lap as dependencies.
 
 Example
 -------

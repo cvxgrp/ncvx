@@ -19,8 +19,9 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 
 from .boolean import Boolean
 import cvxpy.lin_ops.lin_utils as lu
-from munkres import Munkres
 import numpy as np
+import lap
+
 
 class Assign(Boolean):
     """ An assignment matrix.
@@ -54,11 +55,9 @@ class Assign(Boolean):
         if self.is_scalar():
             return 1
         else:
-            m = Munkres()
-            lists = self.matrix_to_lists(-matrix)
-            indexes = m.compute(lists)
+            indexes = lap.lapjv(np.asarray(-matrix))
             result = np.zeros(self.size)
-            for row, column in indexes:
+            for row, column in enumerate(indexes[1]):
                 result[row, column] = 1
             return result
 
