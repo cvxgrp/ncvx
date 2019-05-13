@@ -44,7 +44,7 @@ class Tour(Assign):
             for i in range(self.size[0]):
                 while True:
                     idx = np.argmax(matrix)
-                    row, col = zip(*np.unravel_index([idx], self.size))[0]
+                    row, col = list(zip(*np.unravel_index([idx], self.size)))[0]
                     # Check that consistent with tour.
                     tour[row] = col
                     if self._no_cycles(tour):

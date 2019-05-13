@@ -7,11 +7,11 @@ NCVX is built on top of [CVXPY](http://www.cvxpy.org/), a domain-specific langua
 
 Installation
 ------------
-You should first install CVXPY. CVXPY install guide can be found [here](http://www.cvxpy.org/). If you already have CVXPY, make sure you have the latest version by running ``pip install --upgrade cvxpy``.
+You should first install CVXPY version 0.4. CVXPY install guide can be found [here](http://www.cvxpy.org/). We are working on upgrading NCVX to work with CVXPY 1.0. 
 
 Then install ``scsprox`` from source [here](https://github.com/SteveDiamond/scsprox).
 
-The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder. The package has CVXPY and munkres as dependencies.
+The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder. The package has CVXPY and lap as dependencies.
 
 Example
 -------

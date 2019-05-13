@@ -36,7 +36,7 @@ while True:
     if prob.status != INFEASIBLE:
         break
     else:
-        print "INFEASIBLE"
+        print("INFEASIBLE")
 
 # NC-ADMM Heuristic
 x = Boolean(num_vars)
@@ -46,4 +46,4 @@ result = prob.solve(method="NC-ADMM")
 
 satisfied = (A*x.value <= b).sum()
 percent_satisfied = 100*satisfied/num_clauses
-print "%s%% of the clauses were satisfied." % percent_satisfied
+print("%s%% of the clauses were satisfied." % percent_satisfied)

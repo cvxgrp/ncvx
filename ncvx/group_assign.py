@@ -18,26 +18,35 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .boolean import Boolean
-import cvxpy.lin_ops.lin_utils as lu
-import numpy as np
+import cvxpy as cvx
 import lap
+import numpy as np
 
 
-class Assign(Boolean):
-    """ An assignment matrix.
+class GroupAssign(Boolean):
+    """ A group assignment matrix.
 
-        Assign jobs x workers. Assign one worker to each job.
+    This is a special case (w_ij = 1) of generalized assignment problem.
+    (See https://en.wikipedia.org/wiki/Generalized_assignment_problem for GAP.)
+
+    Assign s_j people to jth group.
+
+    Here the set X is size of (m x n), where m is the number of people and
+     n is the number of groups. Also, m >= n.
+
+    The set is:
+        sum_j X_ij = 1
+        sum_i X_ij = s_j
+        X_ij \in {0, 1}
     """
-    def __init__(self, rows, cols, *args, **kwargs):
+    def __init__(self, rows, cols, col_sum, *args, **kwargs):
         assert rows >= cols
-        super(Assign, self).__init__(rows=rows, cols=cols, *args, **kwargs)
+        assert rows == sum(col_sum)
+        super(GroupAssign, self).__init__(rows=rows, cols=cols, *args, **kwargs)
+        self.col_sum = col_sum
 
     def init_z(self, random):
         if random:
-            # Random relaxation of assignment matrix.
-            # convex combination of mn assignment matrices.
-            # This is a distribution over all relaxations.
-            # http://planetmath.org/proofofbirkhoffvonneumanntheorem
             result = np.zeros(self.size)
             num_entries = self.size[0]*self.size[1]
             weights = np.random.uniform(size=num_entries)
@@ -55,49 +64,45 @@ class Assign(Boolean):
         if self.is_scalar():
             return 1
         else:
-            indexes = lap.lapjv(np.asarray(-matrix))
+            # Note that we use Munkres algorithm, but expand columns from n to m
+            # by replicating each column by group size.
+            mm = np.repeat(matrix, self.col_sum, axis=1)
+            indexes = lap.lapjv(np.asarray(-mm))
             result = np.zeros(self.size)
+            reduce = np.repeat(range(len(self.col_sum)), self.col_sum)
             for row, column in enumerate(indexes[1]):
-                result[row, column] = 1
+                # map expanded column index to reduced group index.
+                result[row, reduce[column]] = 1
             return result
-
-    def matrix_to_lists(self, matrix):
-        """Convert a matrix to a list of lists.
-        """
-        rows, cols = matrix.shape
-        lists = []
-        for i in range(rows):
-            lists.append(matrix[i,:].tolist()[0])
-        return lists
 
     # Constrain all entries to be zero that correspond to
     # zeros in the matrix.
     def _restrict(self, matrix):
         return [self == matrix]
 
-
     def _neighbors(self, matrix):
         """Neighbors swap adjacent rows.
+
         """
         neighbors_list = []
         for i in range(self.size[0]-1):
+            # Add to neighbor only when the candidate person (row) is in a different group.
             new_mat = matrix.copy()
-            new_mat[i+1,:] = matrix[i,:]
-            new_mat[i,:] = matrix[i+1,:]
-            neighbors_list += [new_mat]
+            for j in range(i+1, self.size[0]-1):
+                if np.all(matrix[i, :] == matrix[j, :]):
+                    continue
+                else:
+                    new_mat[j,:] = matrix[i,:]
+                    new_mat[i,:] = matrix[j,:]
+                    neighbors_list += [new_mat]
+                    break
         return neighbors_list
 
-    # In the relaxation, we have 0 <= var <= 1.
-    def canonicalize(self):
-        obj, constraints = super(Assign, self).canonicalize()
-        shape = (self.size[1], 1)
-        one_row_vec = lu.create_const(np.ones(shape), shape)
-        shape = (1, self.size[0])
-        one_col_vec = lu.create_const(np.ones(shape), shape)
-        # Row sum <= 1
-        row_sum = lu.rmul_expr(obj, one_row_vec, (self.size[0], 1))
-        constraints += [lu.create_leq(row_sum, lu.transpose(one_col_vec))]
-        # Col sum == 1.
-        col_sum = lu.mul_expr(one_col_vec, obj, (1, self.size[1]))
-        constraints += [lu.create_eq(col_sum, lu.transpose(one_row_vec))]
-        return (obj, constraints)
+    def relax(self):
+        """Convex relaxation.
+        """
+        constr = super(GroupAssign, self).relax()
+        return constr + [
+            cvx.sum_entries(self, axis=1) == 1,
+            cvx.sum_entries(self, axis=0) == self.col_sum[np.newaxis, :]
+        ]

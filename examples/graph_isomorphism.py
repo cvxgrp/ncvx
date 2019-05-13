@@ -79,6 +79,6 @@ cost = norm(A*P-P*B, "fro")
 prob = Problem(Minimize(cost), [])
 prob.solve(method="NC-ADMM")
 P = P.value
-print "optimal value = ", cost.value
+print("optimal value = ", cost.value)
 print(np.dot(P,np.arange(n)+1))
 

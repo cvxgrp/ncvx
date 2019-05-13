@@ -9,7 +9,7 @@ random.seed(1)
 
 # Generating problem data
 n = 12; k = n//2
-print "n =", n, ", k =", k
+print("n =", n, ", k =", k)
 SNR = 20
 F = np.random.randn(n, k)
 D_true = np.random.exponential(1, size=(n, 1))
@@ -46,16 +46,16 @@ prob.solve(method="NC-ADMM", solver=SCS, show_progress=True, parallel=False,
            restarts=1, max_iter=10, polish_func=polish_func, polish_depth=10)
 Sigma_lr.value = Sigma_lr.project(Sigma_lr.value)
 D_vec.value = pos(D_vec).value
-print "NC-ADMM value", cost.value
+print("NC-ADMM value", cost.value)
 
 w, V = np.linalg.eigh(Sigma_lr.value)
-print w, D_vec.value
-print sum_squares(Sigma - Sigma_lr - D).value
-print sum_squares(Sigma - Sigma_lr.project(Sigma)).value
+print(w, D_vec.value)
+print(sum_squares(Sigma - Sigma_lr - D).value)
+print(sum_squares(Sigma - Sigma_lr.project(Sigma)).value)
 
 # Relax-round-polish heuristic
 prob.solve(method="relax-round-polish", solver=SCS)
-print "Relax-round-polish value", cost.value
+print("Relax-round-polish value", cost.value)
 
 # Nuclear norm heurstic
 gamma = Parameter(sign="positive")
@@ -79,4 +79,4 @@ for gamma_val in np.logspace(-2,2,num=100):
         found_lr = True
         break
 assert found_lr
-print "Nuclear norm value", cost.value
+print("Nuclear norm value", cost.value)

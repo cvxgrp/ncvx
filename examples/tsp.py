@@ -54,7 +54,7 @@ def neighbor_func(Z, cur_merit):
 
         Z[c_candid, b_candid] = 1
         Z[c_candid, d_candid] = 0
-        # print Z
+        # print(Z)
 
     return best_merit, Z
 
@@ -70,8 +70,8 @@ val, result = prob.solve(method="NC-ADMM", polish_depth=5, solver = SCS,
                          show_progress=True, neighbor_func=neighbor_func, parallel=True, restarts=1,
                          max_iter=50)
 end = time.time()
-print end - start
-print "final value", cost.value
+print(end - start)
+print("final value", cost.value)
 
 # Plotting
 ordered = (X*P.T).value
