@@ -18,6 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from cvxpy import *
+import cvxpy as cp
 from ncvx import *
 import numpy as np
 import unittest
@@ -65,7 +66,7 @@ class TestVars(unittest.TestCase):
     # Test card variable.
     def test_card(self):
         x = Card(5, k=3, M=1)
-        p = Problem(Maximize(sum(x)),
+        p = Problem(Maximize(cp.sum(x)),
             [x <= 1, x >= 0])
         result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result[0], 3)
@@ -91,7 +92,7 @@ class TestVars(unittest.TestCase):
         x = Variable((1, 5))
         c = np.array([[1,2,3,4,5]])
         perm = Assign(5, 5)
-        p = Problem(Minimize(sum(x)), [x == c*perm])
+        p = Problem(Minimize(cp.sum(x)), [x == c*perm])
         result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result[0], 15)
         assert_array_almost_equal(sorted(np.nditer(x.value)), c.ravel())
