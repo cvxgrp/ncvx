@@ -35,7 +35,6 @@ class TestVars(unittest.TestCase):
         x = Variable((5, 4))
         y = Boolean(5, 4)
         p = Problem(Minimize(sum(1-x) + sum(x)), [x == y])
-        p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)), [x == y])
         result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result[0], 20)
         for i in range(x.shape[0]):
@@ -45,7 +44,6 @@ class TestVars(unittest.TestCase):
 
         x = Variable()
         p = Problem(Minimize(sum(1-x) + sum(x)), [x == Boolean(5,4)[0,0]])
-        p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)), [x == Boolean(5,4)[0,0]])
         result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result[0], 1)
         self.assertAlmostEqual(x.value*(1-x.value), 0)
@@ -94,7 +92,6 @@ class TestVars(unittest.TestCase):
         c = np.array([[1,2,3,4,5]])
         perm = Assign(5, 5)
         p = Problem(Minimize(sum(x)), [x == c*perm])
-        p = Problem(Minimize(sum_entries(x)), [x == c*perm])
         result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result[0], 15)
         assert_array_almost_equal(sorted(np.nditer(x.value)), c.ravel())
