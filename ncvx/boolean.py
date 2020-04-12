@@ -27,9 +27,9 @@ class Boolean(NonCvxVariable):
     # Sets the initial z value to a matrix of 0.5's.
     def init_z(self, random):
         if random:
-            self.z.value = np.random.uniform(size=self.size)
+            self.z.value = np.random.uniform(size=self.shape)
         else:
-            self.z.value = np.zeros(self.size) + 0.5
+            self.z.value = np.zeros(self.shape) + 0.5
 
     # All values set rounded to zero or 1.
     def _project(self, matrix):
@@ -41,8 +41,8 @@ class Boolean(NonCvxVariable):
 
     def _neighbors(self, matrix):
         neighbors_list = []
-        for i in range(self.size[0]):
-            for j in range(self.size[1]):
+        for i in range(self.shape[0]):
+            for j in range(self.shape[1]):
                 new_mat = matrix.copy()
                 new_mat[i,j] = 1 - new_mat[i,j]
                 neighbors_list += [new_mat]

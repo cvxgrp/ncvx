@@ -31,14 +31,14 @@ class Sphere(NonCvxVariable):
         """
         if random:
             length = np.random.uniform()
-            direction = np.random.randn(self.size)
+            direction = np.random.randn(self.shape)
             self.z.value = length*direction/norm(direction, 2).value
         else:
-            self.z.value = np.zeros(self.size)
+            self.z.value = np.zeros(self.shape)
 
     def _project(self, matrix):
         if np.all(matrix == 0):
-            result = np.ones(self.size)
+            result = np.ones(self.shape)
             return result/cvx.norm(result, 2).value
         else:
             return matrix/cvx.norm(matrix, 2).value

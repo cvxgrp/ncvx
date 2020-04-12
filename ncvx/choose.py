@@ -46,20 +46,20 @@ class Choose(Boolean):
     # In the relaxation, we have 0 <= var <= 1.
     def relax(self):
         constr = super(Choose, self).relax()
-        constr += [cvx.sum_entries(self) == self.k]
+        constr += [cvx.sum(self) == self.k]
         return constr
 
     def _neighbors(self, matrix):
         # Can swap a 1 with a neighboring 0.
         neighbors_list = []
-        for i in range(self.size[0]):
-            for j in range(self.size[1]):
+        for i in range(self.shape[0]):
+            for j in range(self.shape[1]):
                 if matrix[i,j] == 1:
                     for k in range(i-1,i+1):
                         for l in range(j-1,j+1):
                             if k != i and l != j and \
-                               0 <= k < self.size[0] and \
-                               0 <= l < self.size[1] and \
+                               0 <= k < self.shape[0] and \
+                               0 <= l < self.shape[1] and \
                                matrix[k,l] == 0:
                                new_mat = matrix.copy()
                                new_mat[i,j] = 0

@@ -32,8 +32,8 @@ class Partition(Boolean):
     def _project(self, matrix):
         """The largest value in each row is set to 1.
         """
-        result = np.zeros(self.size)
-        for i in range(self.size[0]):
+        result = np.zeros(self.shape)
+        for i in range(self.shape[0]):
             idx = np.argmax(matrix[i,:])
             result[i, idx] = 1
         return result
@@ -41,8 +41,8 @@ class Partition(Boolean):
         # indices = np.argsort(ordering)
         # return result[:,indices]
         # import cvxpy as cvx
-        # X = cvx.Bool(*self.size)
-        # constr = [cvx.sum_entries(X, axis=1) == 1, cvx.diff((self.a.T*X).T) >= 0]
+        # X = cvx.Bool(self.shape)
+        # constr = [cvx.sum(X, axis=1) == 1, cvx.diff((self.a.T*X).T) >= 0]
         # prob = cvx.Problem(cvx.Maximize(cvx.trace(matrix.T*X)), constr)
         # prob.solve(solver=cvx.GUROBI, timeLimit=10)
         # return X.value
@@ -50,8 +50,8 @@ class Partition(Boolean):
     # def _neighbors(self, matrix):
     #     neighbors_list = []
     #     idxs = np.argmax(matrix, axis=1)
-    #     for i in range(self.size[0]):
-    #         for j in range(self.size[1]):
+    #     for i in range(self.shape[0]):
+    #         for j in range(self.shape[1]):
     #             if j != idxs[i]:
     #                 new_mat = matrix.copy()
     #                 new_mat[i,j] = 1
@@ -62,8 +62,8 @@ class Partition(Boolean):
     def _neighbors(self, matrix):
         neighbors_list = []
         idxs = np.argmax(matrix, axis=1)
-        for i in range(self.size[0]):
-            for j in range(self.size[1]):
+        for i in range(self.shape[0]):
+            for j in range(self.shape[1]):
                 if j != idxs[i] and abs(j - idxs[i]) <= 1:
                     new_mat = matrix.copy()
                     new_mat[i,j] = 1
@@ -74,7 +74,7 @@ class Partition(Boolean):
     # def _neighbors(self, matrix):
     #     neighbors_list = []
     #     for i in range(25):
-    #         w = np.random.normal(0, scale=1, size=self.size)
+    #         w = np.random.normal(0, scale=1, size=self.shape)
     #         neighbors_list.append(self._project(matrix + w))
     #     return neighbors_list
 
@@ -82,4 +82,4 @@ class Partition(Boolean):
         """Convex relaxation.
         """
         constr = super(Partition, self).relax()
-        return constr + [cvx.sum_entries(self, axis=1) == 1]
+        return constr + [cvx.sum(self, axis=1) == 1]

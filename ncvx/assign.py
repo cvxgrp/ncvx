@@ -38,17 +38,17 @@ class Assign(Boolean):
             # convex combination of mn assignment matrices.
             # This is a distribution over all relaxations.
             # http://planetmath.org/proofofbirkhoffvonneumanntheorem
-            result = np.zeros(self.size)
-            num_entries = self.size[0]*self.size[1]
+            result = np.zeros(self.shape)
+            num_entries = self.shape[0]*self.shape[1]
             weights = np.random.uniform(size=num_entries)
             weights /= weights.sum()
             for k in range(num_entries):
-                assignment = np.random.permutation(self.size[0])
-                for j in range(self.size[1]):
+                assignment = np.random.permutation(self.shape[0])
+                for j in range(self.shape[1]):
                     result[assignment[j], j] += weights[k]
             self.z.value = result
         else:
-            self.z.value = np.ones(self.size)/self.size[1]
+            self.z.value = np.ones(self.shape)/self.shape[1]
 
     # Compute projection with maximal weighted matching.
     def _project(self, matrix):
@@ -56,7 +56,7 @@ class Assign(Boolean):
             return 1
         else:
             indexes = lap.lapjv(np.asarray(-matrix))
-            result = np.zeros(self.size)
+            result = np.zeros(self.shape)
             for row, column in enumerate(indexes[1]):
                 result[row, column] = 1
             return result
@@ -80,7 +80,7 @@ class Assign(Boolean):
         """Neighbors swap adjacent rows.
         """
         neighbors_list = []
-        for i in range(self.size[0]-1):
+        for i in range(self.shape[0]-1):
             new_mat = matrix.copy()
             new_mat[i+1,:] = matrix[i,:]
             new_mat[i,:] = matrix[i+1,:]
@@ -90,14 +90,14 @@ class Assign(Boolean):
     # In the relaxation, we have 0 <= var <= 1.
     def canonicalize(self):
         obj, constraints = super(Assign, self).canonicalize()
-        shape = (self.size[1], 1)
+        shape = (self.shape[1], 1)
         one_row_vec = lu.create_const(np.ones(shape), shape)
-        shape = (1, self.size[0])
+        shape = (1, self.shape[0])
         one_col_vec = lu.create_const(np.ones(shape), shape)
         # Row sum <= 1
-        row_sum = lu.rmul_expr(obj, one_row_vec, (self.size[0], 1))
+        row_sum = lu.rmul_expr(obj, one_row_vec, (self.shape[0], 1))
         constraints += [lu.create_leq(row_sum, lu.transpose(one_col_vec))]
         # Col sum == 1.
-        col_sum = lu.mul_expr(one_col_vec, obj, (1, self.size[1]))
+        col_sum = lu.mul_expr(one_col_vec, obj, (1, self.shape[1]))
         constraints += [lu.create_eq(col_sum, lu.transpose(one_row_vec))]
         return (obj, constraints)

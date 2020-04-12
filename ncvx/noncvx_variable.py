@@ -25,21 +25,21 @@ from six import with_metaclass
 
 
 class NonCvxVariable(with_metaclass(abc.ABCMeta, cvxpy.Variable)):
-    def __init__(self, *args, **kwargs):
-        super(NonCvxVariable, self).__init__(*args, **kwargs)
+    def __init__(self, rows, cols, *args, **kwargs):
+        super(NonCvxVariable, self).__init__((rows, cols,), *args, **kwargs)
         self.noncvx = True
-        self.z = cvxpy.Parameter(*self.size)
-        self.u = cvxpy.Parameter(*self.size)
-        self.u.value = np.zeros(self.size)
+        self.z = cvxpy.Parameter(self.shape)
+        self.u = cvxpy.Parameter(self.shape)
+        self.u.value = np.zeros(self.shape)
 
     def init_u(self, random=False):
         """Initializes the value of the dual variable.
         """
-        self.u.value = np.zeros(self.size)
+        self.u.value = np.zeros(self.shape)
 
     # Verify that the matrix has the same dimensions as the variable.
     def validate_matrix(self, matrix):
-        if self.size != intf.size(matrix):
+        if self.shape != intf.shape(matrix):
             raise Exception(("The argument's dimensions must match "
                              "the variable's dimensions."))
 

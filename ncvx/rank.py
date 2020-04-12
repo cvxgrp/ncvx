@@ -38,9 +38,9 @@ class AsymmRank(NonCvxVariable):
         """Initializes the value of the replicant variable.
         """
         if random:
-            self.z.value = np.random.uniform(0, self.sigma, size=self.size)
+            self.z.value = np.random.uniform(0, self.sigma, size=self.shape)
         else:
-            self.z.value = np.zeros(self.size)
+            self.z.value = np.zeros(self.shape)
 
     def _project(self, matrix):
         """All singular values except k-largest (by magnitude) set to zero.

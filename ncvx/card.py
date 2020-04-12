@@ -37,14 +37,14 @@ class Card(NonCvxVariable):
         """
         if random:
             alpha = np.random.uniform(0, self.k*self.M)
-            y = np.random.uniform(-self.M, self.M, size=self.size)
+            y = np.random.uniform(-self.M, self.M, size=self.shape)
             self.z.value = y*alpha/np.abs(y).sum()
         else:
-            self.z.value = np.zeros(self.size)
+            self.z.value = np.zeros(self.shape)
 
     # All values except k-largest (by magnitude) set to zero.
     def _project(self, matrix):
-        indices = product(list(range(self.size[0])), list(range(self.size[1])))
+        indices = product(list(range(self.shape[0])), list(range(self.shape[1])))
         v_ind = sorted(indices, key=lambda ind: -abs(matrix[ind]))
         result = matrix.copy()
         for ind in v_ind[self.k:]:
@@ -55,7 +55,7 @@ class Card(NonCvxVariable):
     # zeros in the matrix.
     def _restrict(self, matrix):
         constraints = []
-        rows, cols = intf.size(matrix)
+        rows, cols = intf.shape(matrix)
         for i in range(rows):
             for j in range(cols):
                 if matrix[i, j] == 0:

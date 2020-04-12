@@ -15,7 +15,7 @@ arr = np.arange(m*n)
 np.random.shuffle(arr)
 positions = arr[0:m*n//k]
 A[positions] = np.random.uniform(0, 5, size=(m*n//k,1))
-A = reshape(A, m, n).value
+A = reshape(A, (m, n)).value
 a = np.random.randint(1, 6, size=(n, 1))
 z_true = np.zeros((n,1))
 for i in range(n):
@@ -33,7 +33,7 @@ def neighbor_func(z_val, cur_merit):
     obj = -np.dot(c.T, z_val)
     best_merit = obj + 10000*np.maximum(resid, 0).sum()
     best_sltn = None
-    for i in range(z_val.size):
+    for i in range(z_val.shape):
         vals = [1, -1] if z_val[i] > 0 else [1]
         for op in vals:
             obj2 = obj - op*c[i]

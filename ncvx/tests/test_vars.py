@@ -32,17 +32,19 @@ class TestVars(unittest.TestCase):
 
     # Test boolean variable.
     def test_boolean(self):
-        x = Variable(5, 4)
+        x = Variable((5, 4))
         y = Boolean(5, 4)
+        p = Problem(Minimize(sum(1-x) + sum(x)), [x == y])
         p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)), [x == y])
         result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result[0], 20)
-        for i in range(x.size[0]):
-            for j in range(x.size[1]):
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
                 v = x.value[i, j]
                 self.assertAlmostEqual(v*(1-v), 0)
 
         x = Variable()
+        p = Problem(Minimize(sum(1-x) + sum(x)), [x == Boolean(5,4)[0,0]])
         p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)), [x == Boolean(5,4)[0,0]])
         result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result[0], 1)
@@ -50,14 +52,14 @@ class TestVars(unittest.TestCase):
 
     # Test choose variable.
     def test_choose(self):
-        x = Variable(5, 4)
+        x = Variable((5, 4))
         y = Choose(5, 4, k=4)
-        p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)),
+        p = Problem(Minimize(sum(1-x) + sum(x)),
                     [x == y])
         result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result[0], 20)
-        for i in range(x.size[0]):
-            for j in range(x.size[1]):
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
                 v = x.value[i, j]
                 self.assertAlmostEqual(v*(1-v), 0)
         self.assertAlmostEqual(x.value.sum(), 4)
@@ -65,7 +67,7 @@ class TestVars(unittest.TestCase):
     # Test card variable.
     def test_card(self):
         x = Card(5, k=3, M=1)
-        p = Problem(Maximize(sum_entries(x)),
+        p = Problem(Maximize(sum(x)),
             [x <= 1, x >= 0])
         result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result[0], 3)
@@ -74,23 +76,24 @@ class TestVars(unittest.TestCase):
         self.assertAlmostEqual(x.value.sum(), 3)
 
         #should be equivalent to x == choose
-        x = Variable(5, 4)
+        x = Variable((5, 4))
         c = Choose(5, 4, k=4)
         b = Boolean(5, 4)
-        p = Problem(Minimize(sum_entries(1-x) + sum_entries(x)),
+        p = Problem(Minimize(sum(1-x) + sum(x)),
                     [x == c, x == b])
         result = p.solve(method="NC-ADMM", solver=CVXOPT)
         self.assertAlmostEqual(result[0], 20)
-        for i in range(x.size[0]):
-            for j in range(x.size[1]):
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
                 v = x.value[i, j]
                 self.assertAlmostEqual(v*(1-v), 0)
 
     # Test permutation variable.
     def test_permutation(self):
-        x = Variable(1, 5)
+        x = Variable((1, 5))
         c = np.array([[1,2,3,4,5]])
         perm = Assign(5, 5)
+        p = Problem(Minimize(sum(x)), [x == c*perm])
         p = Problem(Minimize(sum_entries(x)), [x == c*perm])
         result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result[0], 15)

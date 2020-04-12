@@ -39,12 +39,12 @@ class Tour(Assign):
             # Greedy algorithm.
             # Fix largest entry that still could be a tour.
             # Recurse.
-            tour = np.zeros(self.size[0]) - 1
-            result = np.zeros(self.size)
-            for i in range(self.size[0]):
+            tour = np.zeros(self.shape[0]) - 1
+            result = np.zeros(self.shape)
+            for i in range(self.shape[0]):
                 while True:
                     idx = np.argmax(matrix)
-                    row, col = list(zip(*np.unravel_index([idx], self.size)))[0]
+                    row, col = list(zip(*np.unravel_index([idx], self.shape)))[0]
                     # Check that consistent with tour.
                     tour[row] = col
                     if self._no_cycles(tour):
@@ -61,14 +61,14 @@ class Tour(Assign):
     def _no_cycles(self, tour):
         """Return true if the tour has no cycles.
         """
-        for i in range(self.size[0]):
+        for i in range(self.shape[0]):
             visited = []
             cur = i
             while True:
                 visited.append(cur)
                 cur = tour[cur]
                 if cur in visited:
-                    return len(visited) == self.size[0]
+                    return len(visited) == self.shape[0]
                 elif cur == -1:
                     break
         return True
@@ -78,7 +78,7 @@ class Tour(Assign):
         """
         neighbors_list = []
         idxs = np.argmax(matrix, axis=1)
-        for a in range(self.size[0]):
+        for a in range(self.shape[0]):
             new_mat = matrix.copy()
             b = idxs[a]
             c = idxs[b]
@@ -101,7 +101,7 @@ class Tour(Assign):
         """
         constr = super(Tour, self).relax()
         # Ensure it's a tour.
-        n = self.size[0]
+        n = self.shape[0]
         # Diagonal == 0 constraint.
         constr += [cvx.diag(self) == 0]
         # Spectral constraint.

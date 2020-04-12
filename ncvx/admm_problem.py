@@ -28,14 +28,14 @@ from scsprox import Prox
 from queue import PriorityQueue
 
 def get_constr_error(constr):
-    if isinstance(constr, cvx.constraints.EqConstraint):
+    if isinstance(constr, cvx.constraints.Equality):
         error = cvx.abs(constr.args[0] - constr.args[1])
-    elif isinstance(constr, cvx.constraints.LeqConstraint):
+    elif isinstance(constr, cvx.constraints.Inequality):
         error = cvx.pos(constr.args[0] - constr.args[1])
-    elif isinstance(constr, cvx.constraints.PSDConstraint):
+    elif isinstance(constr, cvx.constraints.PSD):
         mat = constr.args[0] - constr.args[1]
         error = cvx.neg(cvx.lambda_min(mat + mat.T)/2)
-    return cvx.sum_entries(error)
+    return cvx.sum(error)
 
 def admm_inner_iter(data):
     (idx, orig_prob, prox, rho_val, gamma_merit, max_iter,
@@ -64,15 +64,15 @@ def admm_inner_iter(data):
         # var.init_z(random=random_z)
         # var.init_u()
         if idx == 0 or not random_z:
-            var.z.value = np.zeros(var.size)
+            var.z.value = np.zeros(var.shape)
         elif var.z.value is not None:
-            var.z.value = np.random.normal(0, sigma, var.size)
-        var.u.value = np.zeros(var.size)
+            var.z.value = np.random.normal(0, sigma, var.shape)
+        var.u.value = np.zeros(var.shape)
 
     # x^k prev.
-    old_vars = {var.id:np.zeros(var.size) for var in orig_prob.variables()}
+    old_vars = {var.id:np.zeros(var.shape) for var in orig_prob.variables()}
 
-    best_so_far = [np.inf, {v.id:np.zeros(v.size) for v in orig_prob.variables()}]
+    best_so_far = [np.inf, {v.id:np.zeros(v.shape) for v in orig_prob.variables()}]
     cur_merit = best_so_far[0]
     # ADMM loop
     for k in range(max_iter):
@@ -86,15 +86,15 @@ def admm_inner_iter(data):
                 x0[var.id] = var.z.value.A1 - var.u.value.A1
             x1 = prox(x0, rho_val)
             for var in orig_prob.variables():
-                var.value = np.reshape(x1[var.id], var.size, order='F')
+                var.value = np.reshape(x1[var.id], var.shape, order='F')
             # print "post solve cost", idx, k, orig_prob.objective.value
         except cvx.SolverError as e:
             pass
         if prox.info['status'] in ['Solved', 'Solved/Inaccurate']:
             for var in noncvx_vars:
                 var.z.value = var.project(alpha*var.value + (1-alpha)*old_vars[var.id] + var.u.value)
-                # var.z.value = var.project(np.random.randn(*var.size))
-                # var.z.value = var.project(np.random.uniform(0, 1, size=var.size))
+                # var.z.value = var.project(np.random.randn(*var.shape))
+                # var.z.value = var.project(np.random.uniform(0, 1, size=var.shape))
                 var.u.value += alpha*var.value + (1-alpha)*old_vars[var.id] - var.z.value
             # Update previous iterate.
             old_vars = {var.id: var.value for var in orig_prob.variables()}
@@ -342,7 +342,7 @@ def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5,
             if k == 0:
                 var.z.value = var.project(var_value)
             else:
-                w = np.random.normal(0, sigma, size=var.size)
+                w = np.random.normal(0, sigma, size=var.shape)
                 var.z.value = var.project(var_value + w)
 
         old_vars = {var.id:var.value for var in rel_prob.variables()}

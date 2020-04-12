@@ -35,7 +35,7 @@ class Integer(NonCvxVariable):
     def init_z(self, random):
         """Initializes the value of the replicant variable.
         """
-        self.z.value = np.zeros(self.size)
+        self.z.value = np.zeros(self.shape)
 
     # All values set rounded to the nearest integer.
     def _project(self, matrix):
@@ -47,8 +47,8 @@ class Integer(NonCvxVariable):
 
     def _neighbors(self, matrix):
         neighbors_list = []
-        for i in range(self.size[0]):
-            for j in range(self.size[1]):
+        for i in range(self.shape[0]):
+            for j in range(self.shape[1]):
                 for diff in [1,-1]:
                     new_mat = matrix.copy()
                     new_mat[i,j] = new_mat[i,j] + diff
