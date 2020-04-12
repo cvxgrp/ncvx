@@ -42,7 +42,7 @@ class GroupAssign(Boolean):
     def __init__(self, rows, cols, col_sum, *args, **kwargs):
         assert rows >= cols
         assert rows == sum(col_sum)
-        super(GroupAssign, self).__init__(rows, cols, *args, **kwargs)
+        super(GroupAssign, self).__init__(rows=rows, cols=cols, *args, **kwargs)
         self.col_sum = col_sum
 
     def init_z(self, random):
