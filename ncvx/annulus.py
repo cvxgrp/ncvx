@@ -33,7 +33,7 @@ class Annulus(NonCvxVariable):
         if self.R >= cvx.norm(matrix, 2).value >= self.r:
             return matrix
         elif cvx.norm(matrix, 2).value == 0:
-            result = np.ones(self.size)
+            result = np.ones(self.shape)
             return self.r*result/cvx.norm(result, 2).value
         elif cvx.norm(matrix, 2).value < self.r:
             return self.r*matrix/cvx.norm(matrix, 2).value

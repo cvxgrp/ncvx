@@ -30,7 +30,7 @@ class Orthog(NonCvxVariable):
     def init_z(self, random):
         """Initializes the value of the replicant variable.
         """
-        self.z.value = np.zeros(self.size)
+        self.z.value = np.zeros(self.shape)
 
     def _project(self, matrix):
         """All singular values except k-largest (by magnitude) set to zero.
@@ -46,7 +46,7 @@ class Orthog(NonCvxVariable):
     def relax(self):
         """Relaxation [I X; X^T I] is PSD.
         """
-        rows, cols = self.size
+        rows, cols = self.shape
         constr = super(Orthog, self).relax()
         mat  = cvx.bmat([[np.eye(rows), self],
                          [X.T, np.eye(cols)]])

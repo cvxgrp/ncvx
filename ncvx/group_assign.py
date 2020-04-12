@@ -47,17 +47,17 @@ class GroupAssign(Boolean):
 
     def init_z(self, random):
         if random:
-            result = np.zeros(self.size)
-            num_entries = self.size[0]*self.size[1]
+            result = np.zeros(self.shape)
+            num_entries = self.shape[0]*self.shape[1]
             weights = np.random.uniform(size=num_entries)
             weights /= weights.sum()
             for k in range(num_entries):
-                assignment = np.random.permutation(self.size[0])
-                for j in range(self.size[1]):
+                assignment = np.random.permutation(self.shape[0])
+                for j in range(self.shape[1]):
                     result[assignment[j], j] += weights[k]
             self.z.value = result
         else:
-            self.z.value = np.ones(self.size)/self.size[1]
+            self.z.value = np.ones(self.shape)/self.shape[1]
 
     # Compute projection with maximal weighted matching.
     def _project(self, matrix):
@@ -68,7 +68,7 @@ class GroupAssign(Boolean):
             # by replicating each column by group size.
             mm = np.repeat(matrix, self.col_sum, axis=1)
             indexes = lap.lapjv(np.asarray(-mm))
-            result = np.zeros(self.size)
+            result = np.zeros(self.shape)
             reduce = np.repeat(range(len(self.col_sum)), self.col_sum)
             for row, column in enumerate(indexes[1]):
                 # map expanded column index to reduced group index.
@@ -85,10 +85,10 @@ class GroupAssign(Boolean):
 
         """
         neighbors_list = []
-        for i in range(self.size[0]-1):
+        for i in range(self.shape[0]-1):
             # Add to neighbor only when the candidate person (row) is in a different group.
             new_mat = matrix.copy()
-            for j in range(i+1, self.size[0]-1):
+            for j in range(i+1, self.shape[0]-1):
                 if np.all(matrix[i, :] == matrix[j, :]):
                     continue
                 else:
@@ -103,6 +103,6 @@ class GroupAssign(Boolean):
         """
         constr = super(GroupAssign, self).relax()
         return constr + [
-            cvx.sum_entries(self, axis=1) == 1,
-            cvx.sum_entries(self, axis=0) == self.col_sum[np.newaxis, :]
+            cvx.sum(self, axis=1) == 1,
+            cvx.sum(self, axis=0) == self.col_sum[np.newaxis, :]
         ]
