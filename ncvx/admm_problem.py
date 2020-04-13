@@ -46,7 +46,7 @@ def admm_inner_iter(data):
     np.random.seed(idx + seed)
     random.seed(idx + seed)
     # Augmented objective.
-    # gamma = cvx.Parameter(sign="positive")
+    # gamma = cvx.Parameter(nonneg=True)
     merit_func = orig_prob.objective.args[0]
     for constr in orig_prob.constraints:
         merit_func += gamma_merit*get_constr_error(constr)
