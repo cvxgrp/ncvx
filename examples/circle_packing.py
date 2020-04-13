@@ -24,7 +24,7 @@ for i in range(N-1):
             cp.vstack((x_vals[i] - x_vals[j], y_vals[i] - y_vals[j])) == diff_vars[-1]]
 
 prob = cp.Problem(objective, constraints)
-result = prob.solve(method="relax-round-polish", polish_depth=100, verbose=True)
+result = prob.solve(method="relax-round-polish", polish_depth=100)
 
 #plot the circles
 circ = np.linspace(0,2 * np.pi)
