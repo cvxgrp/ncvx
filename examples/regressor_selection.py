@@ -47,7 +47,7 @@ print("Relax-round-polish solution =\n", np.around(x.value.T, decimals=3))
 print("--------------------------------------------------------------------")
 
 # Lasso heuristic
-gamma = Parameter(sign="positive")
+gamma = Parameter(nonneg=True)
 reg = norm(x,1)
 cost = sum_squares(A*x - b)
 prob = Problem(Minimize(cost + gamma*reg), [abs(x) <= M])

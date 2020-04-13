@@ -39,7 +39,7 @@ class Tour(Assign):
             # Greedy algorithm.
             # Fix largest entry that still could be a tour.
             # Recurse.
-            tour = np.zeros(self.shape[0]) - 1
+            tour = np.zeros(self.shape[0], dtype=int) - 1
             result = np.zeros(self.shape)
             for i in range(self.shape[0]):
                 while True:

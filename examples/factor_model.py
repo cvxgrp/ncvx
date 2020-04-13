@@ -32,7 +32,7 @@ def polish_func(sltn):
     w_sorted_idxs = np.argsort(-w)
     pos_w = w[w_sorted_idxs[:k]]
     pos_V = V[:,w_sorted_idxs[:k]]
-    Sigma_tmp = Symmetric(k, k)
+    Sigma_tmp = Variable((k, k), symmetric=True)
     Sigma_small = pos_V*Sigma_tmp*pos_V.T
 
     D_vec2 = Variable(n); D = diag(D_vec2)
@@ -58,8 +58,8 @@ prob.solve(method="relax-round-polish", solver=SCS)
 print("Relax-round-polish value", cost.value)
 
 # Nuclear norm heurstic
-gamma = Parameter(sign="positive")
-Sigma_lr = Semidef(n)
+gamma = Parameter(nonneg=True)
+Sigma_lr = Variable(n, PSD=True)
 reg = trace(Sigma_lr)
 D_vec = Variable(n)
 D = diag(D_vec)

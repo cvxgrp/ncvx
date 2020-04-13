@@ -10,7 +10,7 @@ r = 0.4 + 0.6 * np.random.rand(N) # radii
 x_vals = [cp.Variable() for i in range(N)]
 y_vals = [cp.Variable() for i in range(N)]
 
-objective = cp.Minimize(cp.max_elemwise( *(x_vals + y_vals) ) + 0.5)
+objective = cp.Minimize(cp.maximum( *(x_vals + y_vals) ) + 0.5)
 constraints = []
 for i in range(N):
     constraints  += [0.5*r[i] <= x_vals[i],
@@ -21,8 +21,7 @@ for i in range(N-1):
         t = cp.Variable()
         diff_vars.append(ncvx.Annulus(2, 0.5 * (r[i]+r[j]), N))
         constraints += [
-            cp.vstack(x_vals[i] - x_vals[j],
-                      y_vals[i] - y_vals[j]) == diff_vars[-1]]
+            cp.vstack((x_vals[i] - x_vals[j], y_vals[i] - y_vals[j])) == diff_vars[-1]]
 
 prob = cp.Problem(objective, constraints)
 result = prob.solve(method="relax-round-polish", polish_depth=100)
