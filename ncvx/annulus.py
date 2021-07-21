@@ -21,6 +21,7 @@ from .noncvx_variable import NonCvxVariable
 import cvxpy as cvx
 import numpy as np
 
+
 class Annulus(NonCvxVariable):
     """ A variable satisfying r <= ||x||_2 <= R. """
     def __init__(self, rows, r, R, *args, **kwargs):

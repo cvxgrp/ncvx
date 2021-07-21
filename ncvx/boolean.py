@@ -22,8 +22,10 @@ import cvxpy.lin_ops.lin_utils as lu
 from cvxpy import norm
 import numpy as np
 
+
 class Boolean(NonCvxVariable):
     """ A boolean variable. """
+
     # Sets the initial z value to a matrix of 0.5's.
     def init_z(self, random):
         if random:
@@ -33,7 +35,7 @@ class Boolean(NonCvxVariable):
 
     # All values set rounded to zero or 1.
     def _project(self, matrix):
-        return np.around(matrix) #> 0
+        return np.around(matrix)  # > 0
 
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
@@ -44,7 +46,7 @@ class Boolean(NonCvxVariable):
         for i in range(self.shape[0]):
             for j in range(self.shape[1]):
                 new_mat = matrix.copy()
-                new_mat[i,j] = 1 - new_mat[i,j]
+                new_mat[i,j] = 1 - new_mat[i, j]
                 neighbors_list += [new_mat]
         return neighbors_list
 

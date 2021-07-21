@@ -17,7 +17,6 @@ You should have received a copy of the GNU General Public License
 along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from cvxpy import *
 import cvxpy as cp
 from ncvx import *
 import numpy as np
@@ -33,29 +32,29 @@ class TestVars(unittest.TestCase):
 
     # Test boolean variable.
     def test_boolean(self):
-        x = Variable((5, 4))
+        x = cp.Variable((5, 4))
         y = Boolean(5, 4)
-        p = Problem(Minimize(sum(1-x) + sum(x)), [x == y])
-        result = p.solve(method="NC-ADMM", solver=CVXOPT)
+        p = cp.Problem(cp.Minimize(cp.sum(1 - x) + cp.sum(x)), [x == y])
+        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
         self.assertAlmostEqual(result[0], 20)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 v = x.value[i, j]
-                self.assertAlmostEqual(v*(1-v), 0)
+                self.assertAlmostEqual(v * (1 - v), 0)
 
-        x = Variable()
-        p = Problem(Minimize(sum(1-x) + sum(x)), [x == Boolean(5,4)[0,0]])
-        result = p.solve(method="NC-ADMM", solver=CVXOPT)
+        x = cp.Variable()
+        p = cp.Problem(cp.Minimize(sum(1 - x) + sum(x)), [x == Boolean(5, 4)[0, 0]])
+        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
         self.assertAlmostEqual(result[0], 1)
-        self.assertAlmostEqual(x.value*(1-x.value), 0)
+        self.assertAlmostEqual(x.value*(1 - x.value), 0)
 
     # Test choose variable.
     def test_choose(self):
-        x = Variable((5, 4))
+        x = cp.Variable((5, 4))
         y = Choose(5, 4, k=4)
-        p = Problem(Minimize(sum(1-x) + sum(x)),
+        p = cp.Problem(cp.Minimize(sum(1 - x) + sum(x)),
                     [x == y])
-        result = p.solve(method="NC-ADMM", solver=CVXOPT)
+        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
         self.assertAlmostEqual(result[0], 20)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
@@ -66,7 +65,7 @@ class TestVars(unittest.TestCase):
     # Test card variable.
     def test_card(self):
         x = Card(5, k=3, M=1)
-        p = Problem(Maximize(cp.sum(x)),
+        p = cp.Problem(cp.Maximize(cp.sum(x)),
             [x <= 1, x >= 0])
         result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result[0], 3)
@@ -74,13 +73,13 @@ class TestVars(unittest.TestCase):
             self.assertAlmostEqual(v*(1-v), 0)
         self.assertAlmostEqual(x.value.sum(), 3)
 
-        #should be equivalent to x == choose
-        x = Variable((5, 4))
+        # Should be equivalent to x == choose.
+        x = cp.Variable((5, 4))
         c = Choose(5, 4, k=4)
         b = Boolean(5, 4)
-        p = Problem(Minimize(sum(1-x) + sum(x)),
+        p = cp.Problem(cp.Minimize(sum(1 - x) + sum(x)),
                     [x == c, x == b])
-        result = p.solve(method="NC-ADMM", solver=CVXOPT)
+        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
         self.assertAlmostEqual(result[0], 20)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
@@ -89,10 +88,10 @@ class TestVars(unittest.TestCase):
 
     # Test permutation variable.
     def test_permutation(self):
-        x = Variable((1, 5))
-        c = np.array([[1,2,3,4,5]])
+        x = cp.Variable((1, 5))
+        c = np.array([[1, 2, 3, 4, 5]])
         perm = Assign(5, 5)
-        p = Problem(Minimize(cp.sum(x)), [x == c*perm])
+        p = cp.Problem(cp.Minimize(cp.sum(x)), [x == c*perm])
         result = p.solve(method="NC-ADMM")
         self.assertAlmostEqual(result[0], 15)
         assert_array_almost_equal(sorted(np.nditer(x.value)), c.ravel())
