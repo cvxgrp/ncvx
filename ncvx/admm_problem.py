@@ -87,12 +87,16 @@ def admm_inner_iter(data):
                 x0[var.id] = np.asarray(var.z.value, order='F').ravel() - np.asarray(var.u.value, order='F').ravel()
             x1 = prox(x0, rho_val)
             for var in orig_prob.variables():
-                var.value = np.reshape(x1[var.id], var.shape, order='F')
+                # Bypass the projection step when going through the setter, and instead
+                # set the private value directly. Should probably revisit to see if some
+                # longer-term approach we want to take; it's obviously a bit uncomfortable
+                # to bypass the setter.
+                var._value = np.reshape(x1[var.id], var.shape, order='F')
         except cp.SolverError:
             pass
         if prox.info['status'] in ['Solved', 'Solved/Inaccurate']:
             for var in noncvx_vars:
-                var.z.value = var.project(alpha*var.value + (1 - alpha) * old_vars[var.id] + var.u.value)
+                var.z.value = var.project(alpha * var.value + (1 - alpha) * old_vars[var.id] + var.u.value)
                 var.u.value += alpha*var.value + (1 - alpha) * old_vars[var.id] - var.z.value
             # Update previous iterate.
             old_vars = {var.id: var.value for var in orig_prob.variables()}
@@ -146,7 +150,7 @@ def admm_inner_iter(data):
                     prev_merit = np.inf
                     for i in range(polish_depth):
                         cur_merit, sltn = polish_func(sltn)
-                        if (prev_merit - cur_merit)/(prev_merit + 1) < 1e-5:
+                        if (prev_merit - cur_merit) / (prev_merit + 1) < 1e-5:
                             break
                         prev_merit = cur_merit
 
@@ -282,7 +286,7 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
     #print "best found", best_so_far[0]
     # Unpack result.
     for var in self.variables():
-        var.value = best_so_far[1][var.id]
+        var._value = best_so_far[1][var.id]
 
     residual = cp.Constant(0)
     for constr in self.constraints:
@@ -425,10 +429,12 @@ def polish(orig_prob, polish_depth=5, polish_func=None, *args, **kwargs):
         fix_constr = []
         for var in get_noncvx_vars(orig_prob):
             fix_constr += var.restrict(var.value)
-        polish_prob = cp.Problem(orig_prob.objective, orig_prob.constraints + fix_constr)
+        polish_constr = orig_prob.constraints + fix_constr
+        # polish_constr = orig_prob.constraints
+        polish_prob = cp.Problem(orig_prob.objective, polish_constr)
         polish_prob.solve(*args, **kwargs)
         if polish_prob.status in [cp.OPTIMAL, cp.OPTIMAL_INACCURATE] and \
-        (old_val is None or (old_val - polish_prob.value)/(old_val + 1) > 1e-3):
+        (old_val is None or (old_val - polish_prob.value) / (old_val + 1) > 1e-3):
             old_val = polish_prob.value
         else:
             break

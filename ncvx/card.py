@@ -21,7 +21,7 @@ from .noncvx_variable import NonCvxVariable
 import cvxpy.interface.matrix_utilities as intf
 from itertools import product
 import numpy as np
-import cvxpy as cvx
+import cvxpy as cp
 
 class Card(NonCvxVariable):
     """ A variable with constrained cardinality. """
@@ -66,5 +66,5 @@ class Card(NonCvxVariable):
         """The convex relaxation.
         """
         constr = super(Card, self).relax()
-        return constr + [cvx.norm(self, 1) <= self.k*self.M,
-                         cvx.norm(self, 'inf') <= self.M]
+        return constr + [cp.norm(self, 1) <= self.k * self.M,
+                         cp.norm(self, 'inf') <= self.M]

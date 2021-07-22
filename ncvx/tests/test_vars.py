@@ -18,80 +18,79 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import cvxpy as cp
+from cvxpy import sum, Minimize, Maximize, Problem, Variable
 from ncvx import *
 import numpy as np
 import unittest
 from numpy.testing import assert_array_almost_equal
-from builtins import range
 
 
 class TestVars(unittest.TestCase):
     """ Unit tests for the variable types. """
     def setUp(self):
+        self._places = 5      # tune the tolerance down a bit as part of CVDOPT -> SCS switch
+        self._solve = {'method': 'NC-ADMM', 'solver': cp.SCS, 'parallel': False}
         pass
 
-    # Test boolean variable.
     def test_boolean(self):
-        x = cp.Variable((5, 4))
+        """Test boolean variable."""
+        x = Variable((5, 4))
         y = Boolean(5, 4)
-        p = cp.Problem(cp.Minimize(cp.sum(1 - x) + cp.sum(x)), [x == y])
-        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
-        self.assertAlmostEqual(result[0], 20)
-        for i in range(x.shape[0]):
-            for j in range(x.shape[1]):
-                v = x.value[i, j]
-                self.assertAlmostEqual(v * (1 - v), 0)
+        p = Problem(Minimize(sum(1 - x) + sum(x)), [x == y])
+        result = p.solve(**self._solve)
+        self.assertAlmostEqual(result[0], 20, places=self._places)
+        for v in np.nditer(x.value):
+            self.assertAlmostEqual(v * (1 - v), 0, places=self._places)
 
-        x = cp.Variable()
-        p = cp.Problem(cp.Minimize(sum(1 - x) + sum(x)), [x == Boolean(5, 4)[0, 0]])
-        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
-        self.assertAlmostEqual(result[0], 1)
-        self.assertAlmostEqual(x.value*(1 - x.value), 0)
+        # This time test a scalar variable, while restricting to a single entry
+        # of a Boolean matrix.
+        x = Variable()
+        p = Problem(Minimize(sum(1 - x) + sum(x)), [x == Boolean(5, 4)[0, 0]])
+        result = p.solve(**self._solve)
+        self.assertAlmostEqual(result[0], 1, places=self._places)
+        self.assertAlmostEqual(x.value * (1 - x.value), 0, places=self._places)
 
-    # Test choose variable.
     def test_choose(self):
-        x = cp.Variable((5, 4))
+        """Test choose variable."""
+        x = Variable((5, 4))
         y = Choose(5, 4, k=4)
-        p = cp.Problem(cp.Minimize(sum(1 - x) + sum(x)),
-                    [x == y])
-        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
-        self.assertAlmostEqual(result[0], 20)
-        for i in range(x.shape[0]):
-            for j in range(x.shape[1]):
-                v = x.value[i, j]
-                self.assertAlmostEqual(v*(1-v), 0)
-        self.assertAlmostEqual(x.value.sum(), 4)
+        p = Problem(Minimize(sum(1 - x) + sum(x)), [x == y])
+        result = p.solve(**self._solve)
+        self.assertAlmostEqual(result[0], 20, places=self._places)
+        for v in np.nditer(x.value):
+            self.assertAlmostEqual(v * (1 - v), 0, places=self._places)
+        self.assertAlmostEqual(x.value.sum(), 4, places=self._places)
 
     # Test card variable.
     def test_card(self):
         x = Card(5, k=3, M=1)
-        p = cp.Problem(cp.Maximize(cp.sum(x)),
-            [x <= 1, x >= 0])
-        result = p.solve(method="NC-ADMM")
-        self.assertAlmostEqual(result[0], 3)
+        p = Problem(Maximize(sum(x)),
+                    [x <= 1, x >= 0])
+        result = p.solve(**self._solve)
+
+        places = 5
+        self.assertAlmostEqual(result[0], 3, places=self._places)
         for v in np.nditer(x.value):
-            self.assertAlmostEqual(v*(1-v), 0)
-        self.assertAlmostEqual(x.value.sum(), 3)
+            self.assertAlmostEqual(v * (1 - v), 0, places=self._places)
+        self.assertAlmostEqual(x.value.sum(), 3, places=self._places)
 
         # Should be equivalent to x == choose.
-        x = cp.Variable((5, 4))
+        x = Variable((5, 4))
         c = Choose(5, 4, k=4)
         b = Boolean(5, 4)
-        p = cp.Problem(cp.Minimize(sum(1 - x) + sum(x)),
-                    [x == c, x == b])
-        result = p.solve(method="NC-ADMM", solver=cp.CVXOPT)
-        self.assertAlmostEqual(result[0], 20)
-        for i in range(x.shape[0]):
-            for j in range(x.shape[1]):
-                v = x.value[i, j]
-                self.assertAlmostEqual(v*(1-v), 0)
+        p = cp.Problem(Minimize(sum(1 - x) + sum(x)),
+                       [x == c, x == b])
+        result = p.solve(**self._solve)
+        self.assertAlmostEqual(result[0], 20, places=self._places)
+        for v in np.nditer(x.value):
+            self.assertAlmostEqual(v * (1 - v), 0, places=self._places)
 
     # Test permutation variable.
     def test_permutation(self):
-        x = cp.Variable((1, 5))
+        x = Variable((1, 5))
         c = np.array([[1, 2, 3, 4, 5]])
         perm = Assign(5, 5)
-        p = cp.Problem(cp.Minimize(cp.sum(x)), [x == c*perm])
-        result = p.solve(method="NC-ADMM")
-        self.assertAlmostEqual(result[0], 15)
+        p = Problem(Minimize(sum(x)), [x == c*perm])
+        result = p.solve(**self._solve)
+        self.assertAlmostEqual(result[0], 15, places=self._places)
         assert_array_almost_equal(sorted(np.nditer(x.value)), c.ravel())

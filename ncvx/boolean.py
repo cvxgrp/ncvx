@@ -18,8 +18,6 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-import cvxpy.lin_ops.lin_utils as lu
-from cvxpy import norm
 import numpy as np
 
 
@@ -46,7 +44,7 @@ class Boolean(NonCvxVariable):
         for i in range(self.shape[0]):
             for j in range(self.shape[1]):
                 new_mat = matrix.copy()
-                new_mat[i,j] = 1 - new_mat[i, j]
+                new_mat[i, j] = 1 - new_mat[i, j]
                 neighbors_list += [new_mat]
         return neighbors_list
 

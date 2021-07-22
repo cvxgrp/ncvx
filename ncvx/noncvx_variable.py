@@ -18,18 +18,18 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import abc
-import cvxpy
+import cvxpy as cp
 import cvxpy.interface as intf
 import numpy as np
 from six import with_metaclass
 
 
-class NonCvxVariable(with_metaclass(abc.ABCMeta, cvxpy.Variable)):
+class NonCvxVariable(with_metaclass(abc.ABCMeta, cp.Variable)):
     def __init__(self, rows, cols, *args, **kwargs):
         super(NonCvxVariable, self).__init__((rows, cols,), *args, **kwargs)
         self.noncvx = True
-        self.z = cvxpy.Parameter(self.shape)
-        self.u = cvxpy.Parameter(self.shape)
+        self.z = cp.Parameter(self.shape)
+        self.u = cp.Parameter(self.shape)
         self.u.value = np.zeros(self.shape)
 
     def init_u(self, random=False):
@@ -52,7 +52,7 @@ class NonCvxVariable(with_metaclass(abc.ABCMeta, cvxpy.Variable)):
         """Distance from matrix to projection.
         """
         proj_mat = self.project(matrix)
-        return cvxpy.norm(cvxpy.vec(matrix - proj_mat), 2).value
+        return cp.norm(cp.vec(matrix - proj_mat), 2).value
 
     # Project the matrix into the space defined by the non-convex constraint.
     # Returns the updated matrix.

@@ -61,20 +61,10 @@ class Assign(Boolean):
                 result[row, column] = 1
             return result
 
-    def matrix_to_lists(self, matrix):
-        """Convert a matrix to a list of lists.
-        """
-        rows, cols = matrix.shape
-        lists = []
-        for i in range(rows):
-            lists.append(matrix[i,:].tolist()[0])
-        return lists
-
     # Constrain all entries to be zero that correspond to
     # zeros in the matrix.
     def _restrict(self, matrix):
         return [self == matrix]
-
 
     def _neighbors(self, matrix):
         """Neighbors swap adjacent rows.
@@ -100,4 +90,4 @@ class Assign(Boolean):
         # Col sum == 1.
         col_sum = lu.mul_expr(one_col_vec, obj, (1, self.shape[1]))
         constraints += [lu.create_eq(col_sum, lu.transpose(one_row_vec))]
-        return (obj, constraints)
+        return obj, constraints
