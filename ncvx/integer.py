@@ -18,19 +18,19 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-import cvxpy as cvx
+import cvxpy as cp
 import numpy as np
 
 class Integer(NonCvxVariable):
     """ An integer variable. """
     # M - upper bound on |x|
-    def __init__(self, rows=1, cols=1, M=None, *args, **kwargs):
+    def __init__(self, shape, M=None, *args, **kwargs):
         if M is None or np.any(M <= 0):
             raise Exception("Integer requires positive values for M.")
         self.M = np.floor(M)
-        if np.isscalar(self.M) and (rows, cols) != (1,1):
-            self.M = self.M*np.ones((rows,cols))
-        super(Integer, self).__init__(rows, cols, *args, **kwargs)
+        if np.isscalar(self.M) and shape != (1, 1):
+            self.M = self.M * np.ones(shape)
+        super().__init__(shape, *args, **kwargs)
 
     def init_z(self, random):
         """Initializes the value of the replicant variable.
@@ -56,4 +56,4 @@ class Integer(NonCvxVariable):
         return neighbors_list
 
     def relax(self):
-        return [cvx.abs(self) <= self.M]
+        return [cp.abs(self) <= self.M]

@@ -74,11 +74,10 @@ MAX_ITER = 30
 RESTARTS = 5
 
 # NC-ADMM heuristic
-P = Assign(n,n)
-cost = norm(A*P-P*B, "fro")
+P = Assign((n, n))
+cost = norm(A @ P - P @ B, "fro")
 prob = Problem(Minimize(cost), [])
-prob.solve(method="NC-ADMM")
+prob.solve(method="NC-ADMM", solver=CVXOPT, parallel=False)
 P = P.value
 print("optimal value = ", cost.value)
-print(np.dot(P,np.arange(n)+1))
-
+print(np.dot(P, np.arange(n) + 1))

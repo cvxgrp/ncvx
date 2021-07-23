@@ -1,6 +1,7 @@
 from cvxpy import *
 from ncvx import *
 import numpy as np
+import time
 
 np.random.seed(1)
 
@@ -19,7 +20,6 @@ weight = w * x
 constraints = [A * y >= x]
 prob = Problem(Maximize(weight), constraints)
 
-import time
 start = time.time()
 prob.solve(method="NC-ADMM", parallel=False, verbose=True, polish_depth=0, restarts=1)
 end = time.time()

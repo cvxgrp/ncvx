@@ -24,11 +24,11 @@ import cvxpy as cp
 
 class Choose(Boolean):
     """ A variable with k 1's and all other entries 0. """
-    def __init__(self, rows=1, cols=1, k=None, *args, **kwargs):
+    def __init__(self, shape=(1, 1), k=None, *args, **kwargs):
         if k is None:
             raise Exception("Choose requires a value for k.")
         self.k = k
-        super(Choose, self).__init__(rows, cols, *args, **kwargs)
+        super().__init__(shape, *args, **kwargs)
 
     def init_z(self, random):
         """Initialize cloned variable.

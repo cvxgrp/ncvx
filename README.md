@@ -9,7 +9,7 @@ Installation
 ------------
 You should first install CVXPY version 0.4. CVXPY install guide can be found [here](http://www.cvxpy.org/). We are working on upgrading NCVX to work with CVXPY 1.0. 
 
-Then install ``scsprox`` from source [here](https://github.com/SteveDiamond/scsprox).
+Then install ``scsprox`` from source [here](https://github.com/bettbra/scsprox).
 
 The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder. The package has CVXPY and lap as dependencies.
 

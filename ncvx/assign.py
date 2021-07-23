@@ -28,9 +28,9 @@ class Assign(Boolean):
 
         Assign jobs x workers. Assign one worker to each job.
     """
-    def __init__(self, rows, cols, *args, **kwargs):
-        assert rows >= cols
-        super(Assign, self).__init__(rows=rows, cols=cols, *args, **kwargs)
+    def __init__(self, shape=(), *args, **kwargs):
+        assert shape[0] >= shape[1]
+        super().__init__(shape=shape, *args, **kwargs)
 
     def init_z(self, random):
         if random:
@@ -48,7 +48,7 @@ class Assign(Boolean):
                     result[assignment[j], j] += weights[k]
             self.z.value = result
         else:
-            self.z.value = np.ones(self.shape)/self.shape[1]
+            self.z.value = np.ones(self.shape) / self.shape[1]
 
     # Compute projection with maximal weighted matching.
     def _project(self, matrix):

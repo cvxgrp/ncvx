@@ -18,7 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-import cvxpy as cvx
+import cvxpy as cp
 import numpy as np
 
 
@@ -28,26 +28,26 @@ class Annulus(NonCvxVariable):
         self.r = r
         self.R = R
         assert 0 < r <= R
-        super(Annulus, self).__init__(rows, 1, *args, **kwargs)
+        super().__init__((rows, 1), *args, **kwargs)
 
     def _project(self, matrix):
-        if self.R >= cvx.norm(matrix, 2).value >= self.r:
+        if self.R >= cp.norm(matrix, 2).value >= self.r:
             return matrix
-        elif cvx.norm(matrix, 2).value == 0:
+        elif cp.norm(matrix, 2).value == 0:
             result = np.ones(self.shape)
-            return self.r*result/cvx.norm(result, 2).value
-        elif cvx.norm(matrix, 2).value < self.r:
-            return self.r*matrix/cvx.norm(matrix, 2).value
+            return self.r * result / cp.norm(result, 2).value
+        elif cp.norm(matrix, 2).value < self.r:
+            return self.r * matrix / cp.norm(matrix, 2).value
         else:
-            return self.R*matrix/cvx.norm(matrix, 2).value
+            return self.R * matrix / cp.norm(matrix, 2).value
 
     def _restrict(self, matrix):
         # Add restriction that beyond hyperplane at projection onto
         # n-sphere of radius r.
-        return [matrix.T*self >= self.r*cvx.norm(matrix, 2).value]
+        return [matrix.T * self >= self.r * cp.norm(matrix, 2).value]
 
     def relax(self):
         """The convex relaxation.
         """
         constr = super(Annulus, self).relax()
-        return constr + [cvx.norm(self, 2) <= self.R]
+        return constr + [cp.norm(self, 2) <= self.R]

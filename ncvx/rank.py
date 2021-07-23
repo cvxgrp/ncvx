@@ -18,21 +18,23 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-import cvxpy as cvx
+import cvxpy as cp
 import numpy as np
 
-def Rank(rows, cols, k, M=None, symmetric=False):
+
+def Rank(shape, k, M=None, symmetric=False):
     if symmetric:
-        return SymmRank(rows, cols, k, M)
+        return SymmRank(shape, k, M)
     else:
-        return AsymmRank(rows, cols, k, M)
+        return AsymmRank(shape, k, M)
+
 
 class AsymmRank(NonCvxVariable):
     """ A variable satisfying Rank(X) <= k. """
-    def __init__(self, rows, cols, k, M, *args, **kwargs):
+    def __init__(self, shape, k, M, *args, **kwargs):
         self.k = k
         self.M = M
-        super(AsymmRank, self).__init__(rows, cols, *args, **kwargs)
+        super().__init__(shape, *args, **kwargs)
 
     def init_z(self, random):
         """Initializes the value of the replicant variable.
@@ -51,14 +53,15 @@ class AsymmRank(NonCvxVariable):
 
     def _restrict(self, matrix):
         U, s, V = np.linalg.svd(matrix)
-        Sigma = cvx.Variable(self.k, self.k)
-        return [self == U[:,:self.k]*Sigma*V.T[:self.k,:]]
+        Sigma = cp.Variable(self.k, self.k)
+        return [self == U[:, :self.k] * Sigma*V.T[:self.k, :]]
 
     def relax(self):
         if self.M is None:
             return []
         else:
-            return [cvx.norm(self, 2) <= self.M]
+            return [cp.norm(self, 2) <= self.M]
+
 
 class SymmRank(AsymmRank):
     """ A symmetric variable satisfying Rank(X) <= k. """
@@ -76,9 +79,9 @@ class SymmRank(AsymmRank):
         w, V = np.linalg.eigh(matrix)
         w_sorted_idxs = np.argsort(-w)
         pos_w = w[w_sorted_idxs[:self.k]]
-        pos_V = V[:,w_sorted_idxs[:self.k]]
-        Sigma = cvx.Symmetric(self.k, self.k)
+        pos_V = V[:, w_sorted_idxs[:self.k]]
+        Sigma = cp.Symmetric(self.k, self.k)
         return [self == pos_V*Sigma*pos_V.T]
 
     def relax(self):
-        return super(SymmRank, self).relax() + [self == self.T]
+        return super().relax() + [self == self.T]

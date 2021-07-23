@@ -23,6 +23,7 @@ from itertools import product
 import numpy as np
 import cvxpy as cp
 
+
 class Card(NonCvxVariable):
     """ A variable with constrained cardinality. """
     # k - the maximum cardinality of the variable.
@@ -30,7 +31,7 @@ class Card(NonCvxVariable):
     def __init__(self, rows, k, M, *args, **kwargs):
         self.k = k
         self.M = M
-        super(Card, self).__init__(rows, 1, *args, **kwargs)
+        super().__init__((rows, 1), *args, **kwargs)
 
     def init_z(self, random):
         """Initializes the value of the replicant variable.

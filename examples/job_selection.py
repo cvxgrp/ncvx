@@ -27,6 +27,7 @@ cost = c.T*z
 constraints = [z >= 0, A*z <= b]
 prob = Problem(Maximize(cost), constraints)
 
+
 def neighbor_func(z_val, cur_merit):
     # Special function for evaluating neighbors.
     resid = np.dot(A, z_val) - b
@@ -48,6 +49,7 @@ def neighbor_func(z_val, cur_merit):
         z_val[i] += op
     return best_merit, z_val
 
+
 # NC-ADMM heuristic
 start = time.time()
 val, resid = prob.solve(method="NC-ADMM", polish_depth=5, show_progress=True, parallel=False,
@@ -56,15 +58,15 @@ print("NC-ADMM residual =", resid)
 print("NC-ADMM value =", val)
 print(time.time() - start)
 
-# # Relax-round-polish heuristic
+# Relax-round-polish heuristic
 # val, resid = prob.solve(method="relax-round-polish", polish_depth=5)
 # print(("Relax-round-polish residual =", resid))
 # print(("Relax-round-polish value =", val))
 
-## Global solution via Gurobi. (Uncooment the code below.)
+# Global solution via Gurobi. (Uncooment the code below.)
 z = Int(n)
-cost = c.T*z
+cost = c.T * z
 prob = Problem(Maximize(cost),
                [z <= a, z >= 0, A*z <= b])
-prob.solve(solver=GUROBI, TimeLimit = 20, verbose=True)
+prob.solve(solver=GUROBI, TimeLimit=20, verbose=True)
 print("Gurobi value =", cost.value)
