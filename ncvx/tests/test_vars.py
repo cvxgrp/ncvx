@@ -29,8 +29,10 @@ class TestVars(unittest.TestCase):
     """ Unit tests for the variable types. """
     def setUp(self):
         self._places = 5      # tune the tolerance down a bit as part of CVDOPT -> SCS switch
-        self._solve = {'method': 'NC-ADMM', 'solver': cp.SCS, 'parallel': False}
-        pass
+        # Parallel running during unit testing seems to cause some snags. So set
+        # to false here.
+        self._solve = {'method': 'NC-ADMM', 'solver': cp.SCS, 'parallel': False,
+                       'verbose': False}
 
     def test_boolean(self):
         """Test boolean variable."""

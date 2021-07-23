@@ -243,7 +243,8 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
         rho = [np.random.uniform() for i in range(restarts)]
     else:
         assert len(rho) == restarts
-    # num_procs is the number of processors to launch.
+
+    # num_procs is the number of processes to launch.
     if num_procs is None:
         num_procs = multiprocessing.cpu_count()
 
@@ -265,14 +266,13 @@ def admm(self, rho=None, max_iter=50, restarts=5, alpha=1.8,
 
     # Algorithm.
     if parallel:
-        pool = multiprocessing.Pool(num_procs)
-        tmp_prob = cp.Problem(rel_prob.objective, rel_prob.constraints)
-        best_per_rho = pool.map(admm_inner_iter,
-            [(idx, tmp_prob, None, rho_val, gamma, max_iter,
-              random, polish_best, seed, sigma, show_progress, neighbor_func, polish_func,
-              prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in enumerate(rho)])
-        pool.close()
-        pool.join()
+        with multiprocessing.Pool(num_procs) as pool:
+            tmp_prob = cp.Problem(rel_prob.objective, rel_prob.constraints)
+            best_per_rho = pool.map(admm_inner_iter,
+                                [(idx, tmp_prob, None, rho_val, gamma, max_iter,
+                                  random, polish_best, seed, sigma, show_progress, neighbor_func, polish_func,
+                                  prox_polished, polish_depth, lower_bound, alpha, args, kwargs) for idx, rho_val in
+                                 enumerate(rho)])
     else:
         xvars = {var.id: var for var in rel_prob.variables()}
         prox = Prox(rel_prob, xvars)
@@ -440,6 +440,7 @@ def polish(orig_prob, polish_depth=5, polish_func=None, *args, **kwargs):
             break
 
     return polish_prob.value, polish_prob.status
+
 
 # Add admm method to cvx Problem.
 cp.Problem.register_solve("NC-ADMM", admm)
