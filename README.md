@@ -7,25 +7,28 @@ NCVX is built on top of [CVXPY](http://www.cvxpy.org/), a domain-specific langua
 
 Installation
 ------------
-You should first install CVXPY version 0.4. CVXPY install guide can be found [here](http://www.cvxpy.org/). We are working on upgrading NCVX to work with CVXPY 1.0. 
+You should first install CVXPY version >= 1.1.13. The CVXPY install guide can be found [here](http://www.cvxpy.org/).
 
 Then install ``scsprox`` from source [here](https://github.com/bettbra/scsprox).
 
-The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder. The package has CVXPY and lap as dependencies.
+The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder.
 
 Example
 -------
 The following code uses NC-ADMM heuristic to approximately solve a least-squares problem where the variable has only ``k`` nonzero components, and all components are between -1 and 1.
 ```
+from cvxpy import sum_squares, sum, Problem, Minimize
+
+
 # Problem data
 m = 30; n = 20; k = 6
 numpy.random.seed(1)
 A = numpy.random.randn(m, n)
 b = numpy.random.randn(m)
 
-#NC-ADMM heuristic.
+# NC-ADMM heuristic.
 x = Card(n, k, 1)
-objective = sum_squares(A*x - b)
+objective = sum_squares(A @ x - b)
 prob = Problem(Minimize(objective), [])
 prob.solve(method="NC-ADMM")
 print objective.value
@@ -34,7 +37,7 @@ print x.value
 Other solve methods can be used by simply changing the solve method, for example ``prob.solve(method="relax-round-polish")`` uses relax-round-polish to approximately solve the problem. Constraints can be added to the problem similar to CVXPY. For example, the following code approximately solves the above problem, with the additional constraint that the components of ``x`` must add up to zero.
 ```
 x = Card(n, k, M)
-objective = sum_squares(A*x - b)
+objective = sum_squares(A @ x - b)
 constraints = [sum(x) == 0]
 prob = Problem(Minimize(objective), constraints)
 prob.solve(method="NC-ADMM")
@@ -51,8 +54,8 @@ The following sets are supported by NCVX at the moment:
 * ``Choose(n, k)`` creates a variable with ``n`` Boolean components, with the implicit constraint that it has exactly ``k`` nonozero entries.
 * ``Annulus(n, r, R)`` creates a variable with ``n`` components with the implicit constraint that its Euclidean norm is between ``r`` and ``R``.
 * ``Sphere(n, r)`` creates a variable with ``n`` components with the implicit constraint that its Euclidean norm is equal to ``r``.
-* ``Rank(m, n, k, M)`` creates a ``m x n`` matrix variable with the implicit constraints that its rank is at most ``k`` and its Euclidean norm is at most ``M``.
-* ``Assign(m, n) `` creates a ``m x n`` matrix variable with the implicit constraint that it is an assignment matrix.
+* ``Rank((m, n), k, M)`` creates a ``m x n`` matrix variable with the implicit constraints that its rank is at most ``k`` and its Euclidean norm is at most ``M``.
+* ``Assign((m, n)) `` creates a ``m x n`` matrix variable with the implicit constraint that it is an assignment matrix.
 * ``Permute(n)`` creates a ``n x n`` matrix variable with the implicit constraint that it is a permutation matrix.
 * ``Cycle(n)`` creates a ``n x n`` matrix variable with the implicit constraint that it is the adjacency matrix of a Hamiltonian cycle.
 
