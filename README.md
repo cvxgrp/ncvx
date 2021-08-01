@@ -17,8 +17,8 @@ Example
 -------
 The following code uses NC-ADMM heuristic to approximately solve a least-squares problem where the variable has only ``k`` nonzero components, and all components are between -1 and 1.
 ```
-from cvxpy import sum_squares, sum, Problem, Minimize
-
+import cvxpy as cp
+import ncvx as nc
 
 # Problem data
 m = 30; n = 20; k = 6
@@ -27,29 +27,29 @@ A = numpy.random.randn(m, n)
 b = numpy.random.randn(m)
 
 # NC-ADMM heuristic.
-x = Card(n, k, 1)
-objective = sum_squares(A @ x - b)
-prob = Problem(Minimize(objective), [])
+x = nc.Card(n, k, 1)
+objective = cp.sum_squares(A @ x - b)
+prob = cp.Problem(cp.Minimize(objective), [])
 prob.solve(method="NC-ADMM")
-print objective.value
-print x.value
+print(f"Objective = {objective.value}")
+print(f"x = \n{x.value}")
 ```
 Other solve methods can be used by simply changing the solve method, for example ``prob.solve(method="relax-round-polish")`` uses relax-round-polish to approximately solve the problem. Constraints can be added to the problem similar to CVXPY. For example, the following code approximately solves the above problem, with the additional constraint that the components of ``x`` must add up to zero.
 ```
-x = Card(n, k, M)
-objective = sum_squares(A @ x - b)
-constraints = [sum(x) == 0]
-prob = Problem(Minimize(objective), constraints)
+x = nc.Card(n, k, M)
+objective = cp.sum_squares(A @ x - b)
+constraints = [cp.sum(x) == 0]
+prob = cp.Problem(cp.Minimize(objective), constraints)
 prob.solve(method="NC-ADMM")
-print objective.value
-print x.value
+print(f"Objective = {objective.value}")
+print(f"x = \n{x.value}")
 ```
 
 Variable constructors
 ---------------------
 The following sets are supported by NCVX at the moment:
 * ``Boolean(n)`` creates a variable with ``n`` Boolean components.
-* ``integer(n, M)`` creates a variable with ``n`` integer components between ``-M`` and ``M``.
+* ``Integer(n, M)`` creates a variable with ``n`` integer components between ``-M`` and ``M``.
 * ``Card(n, k, M)`` creates a variable with ``n`` components, with the implicit constraint that at most ``k`` entries are nonzero and all entries are between ``-M`` and ``M``.
 * ``Choose(n, k)`` creates a variable with ``n`` Boolean components, with the implicit constraint that it has exactly ``k`` nonozero entries.
 * ``Annulus(n, r, R)`` creates a variable with ``n`` components with the implicit constraint that its Euclidean norm is between ``r`` and ``R``.
