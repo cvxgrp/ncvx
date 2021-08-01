@@ -28,6 +28,7 @@ class Annulus(NonCvxVariable):
         self.r = r
         self.R = R
         assert 0 < r <= R
+        kwargs.pop('shape', None)
         super().__init__((rows, 1), *args, **kwargs)
 
     def _project(self, matrix):

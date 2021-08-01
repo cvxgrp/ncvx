@@ -50,7 +50,7 @@ def admm_inner_iter(data):
     # gamma = cvx.Parameter(nonneg=True)
     merit_func = orig_prob.objective.args[0]
     for constr in orig_prob.constraints:
-        merit_func += gamma_merit*get_constr_error(constr)
+        merit_func += gamma_merit * get_constr_error(constr)
 
     # Form ADMM problem.
     # obj = orig_prob.objective.args[0]
@@ -110,7 +110,7 @@ def admm_inner_iter(data):
                     cur_merit, sltn = neighbor_search(merit_func, old_vars, best_so_far,
                                                       idx, polish_depth)
                 else:
-                    sltn = noncvx_vars[0].z.value.A.copy()
+                    sltn = noncvx_vars[0].z.value.copy()
                     noncvx_vars[0].value = sltn
                     cur_merit = orig_prob.objective.value
 
@@ -411,7 +411,7 @@ def relax_round_polish(self, gamma=1e4, samples=10, sigma=1, polish_depth=5,
             best_so_far[1] = sltn
     # Unpack result.
     for var in rel_prob.variables():
-        var.value = best_so_far[1][var.id]
+        var._value = best_so_far[1][var.id]
 
     return self.objective.value, residual.value
 

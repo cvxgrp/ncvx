@@ -1,6 +1,8 @@
-from cvxpy import *
-from ncvx import *
+import cvxpy as cp
+import ncvx as nc
 import numpy as np
+
+# This example is described in Section 6.6 of the NCVX paper.
 
 np.random.seed(1)
 
@@ -74,10 +76,10 @@ MAX_ITER = 30
 RESTARTS = 5
 
 # NC-ADMM heuristic
-P = Assign((n, n))
-cost = norm(A @ P - P @ B, "fro")
-prob = Problem(Minimize(cost), [])
-prob.solve(method="NC-ADMM", solver=CVXOPT, parallel=False)
+P = nc.Assign((n, n))
+cost = cp.norm(A @ P - P @ B, "fro")
+prob = cp.Problem(cp.Minimize(cost), [])
+prob.solve(method="NC-ADMM", solver=cp.CVXOPT, parallel=False)
 P = P.value
 print("optimal value = ", cost.value)
 print(np.dot(P, np.arange(n) + 1))

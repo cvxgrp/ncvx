@@ -21,6 +21,7 @@ from .noncvx_variable import NonCvxVariable
 import cvxpy as cp
 import numpy as np
 
+
 class Integer(NonCvxVariable):
     """ An integer variable. """
     # M - upper bound on |x|

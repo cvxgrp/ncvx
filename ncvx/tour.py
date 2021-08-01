@@ -85,14 +85,14 @@ class Tour(Assign):
             c = idxs[b]
             d = idxs[c]
 
-            new_mat[a,c] = 1
-            new_mat[a,b] = 0
+            new_mat[a, c] = 1
+            new_mat[a, b] = 0
 
-            new_mat[b,d] = 1
-            new_mat[b,c] = 0
+            new_mat[b, d] = 1
+            new_mat[b, c] = 0
 
-            new_mat[c,b] = 1
-            new_mat[c,d] = 0
+            new_mat[c, b] = 1
+            new_mat[c, d] = 0
 
             neighbors_list += [new_mat]
         return neighbors_list
@@ -100,11 +100,11 @@ class Tour(Assign):
     def relax(self):
         """Convex relaxation.
         """
-        constr = super(Tour, self).relax()
+        constr = super().relax()
         # Ensure it's a tour.
         n = self.shape[0]
         # Diagonal == 0 constraint.
         constr += [cp.diag(self) == 0]
         # Spectral constraint.
         mat_val = np.cos(2 * np.pi / n) * np.eye(n) + 4 * np.ones((n, n)) / n
-        return constr + [mat_val >> (self + self.T) / 2]
+        return constr + [mat_val >= (self + self.T) / 2]

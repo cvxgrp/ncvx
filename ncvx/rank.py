@@ -80,8 +80,8 @@ class SymmRank(AsymmRank):
         w_sorted_idxs = np.argsort(-w)
         pos_w = w[w_sorted_idxs[:self.k]]
         pos_V = V[:, w_sorted_idxs[:self.k]]
-        Sigma = cp.Symmetric(self.k, self.k)
-        return [self == pos_V*Sigma*pos_V.T]
+        Sigma = cp.Variable(shape=(self.k, self.k), symmetric=True)
+        return [self == pos_V @ Sigma @ pos_V.T]
 
     def relax(self):
         return super().relax() + [self == self.T]

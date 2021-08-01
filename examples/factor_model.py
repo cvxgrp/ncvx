@@ -1,30 +1,30 @@
-from cvxpy import *
-from ncvx import *
+import cvxpy as cp
+from cvxpy import norm, Variable, diag, sum_squares, Minimize, trace, Problem, Parameter, pos
+import ncvx as nc
 import numpy as np
-import random
 
-np.random.seed(1)
-random.seed(1)
+# This example is described in Section 6.5 of the NCVX paper.
 
+rng = np.random.default_rng(seed=123)
 
 # Generating problem data
 n = 12
 k = n // 2
-print("n =", n, ", k =", k)
+print(f"n = {n}, k = {k}")
 SNR = 20
-F = np.random.randn(n, k)
-D_true = np.random.exponential(1, size=(n, 1))
-Sigma_true = F.dot(F.T) + np.diag(D_true)
+F = rng.standard_normal(size=(n, k))
+D_true = rng.exponential(1, size=(n, 1))
+Sigma_true = F @ F.T + np.diag(D_true)
 variance = norm(Sigma_true, 'fro').value / (np.sqrt(n * n) * SNR)
-noise = np.random.normal(0, variance, size=(n, n))
+noise = rng.normal(0, variance, size=(n, n))
 Sigma = Sigma_true + (noise + noise.T) / 2
 
 # NC-ADMM heuristic
-Sigma_lr = Rank((n, n), k, M=None, symmetric=True)
+Sigma_lr = nc.Rank((n, n), k, M=None, symmetric=True)
 D_vec = Variable(n)
 D = diag(D_vec)
 cost = sum_squares(Sigma - Sigma_lr - D)
-constraints = [D_vec >= 0, Sigma_lr >> 0]
+constraints = [D_vec >= 0, Sigma_lr >= 0]
 prob = Problem(Minimize(cost), constraints)
 
 
@@ -41,11 +41,11 @@ def polish_func(sltn):
     cost = sum_squares(Sigma - Sigma_small - D)
     constraints = [D_vec >= 0, Sigma_lr >> 0]
     prob = Problem(Minimize(cost), constraints)
-    result = prob.solve(solver=SCS)
+    result = prob.solve(solver=cp.SCS)
     return result, {Sigma_lr.id: Sigma_small.value, D_vec.id: D_vec2.value}
 
 
-prob.solve(method="NC-ADMM", solver=SCS, show_progress=True, parallel=False,
+prob.solve(method="NC-ADMM", solver=cp.SCS, show_progress=True, parallel=False,
            restarts=1, max_iter=10, polish_func=polish_func, polish_depth=10)
 Sigma_lr.value = Sigma_lr.project(Sigma_lr.value)
 D_vec.value = pos(D_vec).value
@@ -57,12 +57,12 @@ print(sum_squares(Sigma - Sigma_lr - D).value)
 print(sum_squares(Sigma - Sigma_lr.project(Sigma)).value)
 
 # Relax-round-polish heuristic
-prob.solve(method="relax-round-polish", solver=SCS)
+prob.solve(method="relax-round-polish", solver=cp.SCS)
 print("Relax-round-polish value", cost.value)
 
 # Nuclear norm heuristic
 gamma = Parameter(nonneg=True)
-Sigma_lr = Variable(n, PSD=True)
+Sigma_lr = Variable((n, n), PSD=True)
 reg = trace(Sigma_lr)
 D_vec = Variable(n)
 D = diag(D_vec)
@@ -70,9 +70,9 @@ cost = sum_squares(Sigma - Sigma_lr - D)
 constraints = [D_vec >= 0]
 prob = Problem(Minimize(cost + gamma*reg), constraints)
 found_lr = False
-for gamma_val in np.logspace(-2,2,num=100):
+for gamma_val in np.logspace(-2, 2, num=100):
     gamma.value = gamma_val
-    prob.solve(solver=SCS)
+    prob.solve(solver=cp.SCS)
     w = np.linalg.eigvals(Sigma_lr.value)
     rank = sum(w > 1e-3)
     if rank <= k:
