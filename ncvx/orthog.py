@@ -18,14 +18,14 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .noncvx_variable import NonCvxVariable
-import cvxpy as cvx
+import cvxpy as cp
 import numpy as np
-import scipy.sparse as sp
+
 
 class Orthog(NonCvxVariable):
     """ A variable satisfying X^TX = I. """
     def __init__(self, size, *args, **kwargs):
-        super(Orthog, self).__init__(size, size, *args, **kwargs)
+        super().__init__(shape=(size, size), *args, **kwargs)
 
     def init_z(self, random):
         """Initializes the value of the replicant variable.
@@ -48,6 +48,6 @@ class Orthog(NonCvxVariable):
         """
         rows, cols = self.shape
         constr = super(Orthog, self).relax()
-        mat  = cvx.bmat([[np.eye(rows), self],
-                         [X.T, np.eye(cols)]])
+        mat = cp.bmat([[np.eye(rows), self],
+                       [X.T, np.eye(cols)]])
         return constr + [mat >> 0]

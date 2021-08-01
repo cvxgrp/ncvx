@@ -18,7 +18,7 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .boolean import Boolean
-import cvxpy as cvx
+import cvxpy as cp
 import lap
 import numpy as np
 
@@ -39,10 +39,10 @@ class GroupAssign(Boolean):
         sum_i X_ij = s_j
         X_ij \in {0, 1}
     """
-    def __init__(self, rows, cols, col_sum, *args, **kwargs):
-        assert rows >= cols
-        assert rows == sum(col_sum)
-        super(GroupAssign, self).__init__(rows=rows, cols=cols, *args, **kwargs)
+    def __init__(self, shape, col_sum, *args, **kwargs):
+        assert shape[0] >= shape[1]
+        assert shape[0] == sum(col_sum)
+        super().__init__(shape, *args, **kwargs)
         self.col_sum = col_sum
 
     def init_z(self, random):
@@ -88,12 +88,12 @@ class GroupAssign(Boolean):
         for i in range(self.shape[0]-1):
             # Add to neighbor only when the candidate person (row) is in a different group.
             new_mat = matrix.copy()
-            for j in range(i+1, self.shape[0]-1):
+            for j in range(i + 1, self.shape[0] - 1):
                 if np.all(matrix[i, :] == matrix[j, :]):
                     continue
                 else:
-                    new_mat[j,:] = matrix[i,:]
-                    new_mat[i,:] = matrix[j,:]
+                    new_mat[j, :] = matrix[i, :]
+                    new_mat[i, :] = matrix[j, :]
                     neighbors_list += [new_mat]
                     break
         return neighbors_list
@@ -101,8 +101,8 @@ class GroupAssign(Boolean):
     def relax(self):
         """Convex relaxation.
         """
-        constr = super(GroupAssign, self).relax()
+        constr = super().relax()
         return constr + [
-            cvx.sum(self, axis=1) == 1,
-            cvx.sum(self, axis=0) == self.col_sum[np.newaxis, :]
+            cp.sum(self, axis=1) == 1,
+            cp.sum(self, axis=0) == self.col_sum[np.newaxis, :]
         ]

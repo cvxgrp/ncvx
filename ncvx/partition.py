@@ -18,16 +18,15 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .boolean import Boolean
-import cvxopt
 import numpy as np
-from itertools import product
-import cvxpy as cvx
+import cvxpy as cp
+
 
 class Partition(Boolean):
     """ A boolean matrix with exactly one 1 in each row.
     """
-    def __init__(self, rows, cols, *args, **kwargs):
-        super(Partition, self).__init__(rows, cols, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _project(self, matrix):
         """The largest value in each row is set to 1.
@@ -81,5 +80,5 @@ class Partition(Boolean):
     def relax(self):
         """Convex relaxation.
         """
-        constr = super(Partition, self).relax()
-        return constr + [cvx.sum(self, axis=1) == 1]
+        constr = super().relax()
+        return constr + [cp.sum(self, axis=1) == 1]

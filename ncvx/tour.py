@@ -19,16 +19,17 @@ along with CVXPY.  If not, see <http://www.gnu.org/licenses/>.
 
 from .assign import Assign
 import numpy as np
-import cvxpy as cvx
+import cvxpy as cp
 
 # TODO change to cycle.
+
 
 class Tour(Assign):
     """ A permutation matrix that describes a single cycle.
         e.g. 1->3->5->2->4->1
     """
     def __init__(self, n, *args, **kwargs):
-        super(Tour, self).__init__(rows=n, cols=n, *args, **kwargs)
+        super().__init__(shape=(n, n), *args, **kwargs)
 
     # Compute projection with maximal weighted matching.
     def _project(self, matrix):
@@ -84,14 +85,14 @@ class Tour(Assign):
             c = idxs[b]
             d = idxs[c]
 
-            new_mat[a,c] = 1
-            new_mat[a,b] = 0
+            new_mat[a, c] = 1
+            new_mat[a, b] = 0
 
-            new_mat[b,d] = 1
-            new_mat[b,c] = 0
+            new_mat[b, d] = 1
+            new_mat[b, c] = 0
 
-            new_mat[c,b] = 1
-            new_mat[c,d] = 0
+            new_mat[c, b] = 1
+            new_mat[c, d] = 0
 
             neighbors_list += [new_mat]
         return neighbors_list
@@ -99,11 +100,11 @@ class Tour(Assign):
     def relax(self):
         """Convex relaxation.
         """
-        constr = super(Tour, self).relax()
+        constr = super().relax()
         # Ensure it's a tour.
         n = self.shape[0]
         # Diagonal == 0 constraint.
-        constr += [cvx.diag(self) == 0]
+        constr += [cp.diag(self) == 0]
         # Spectral constraint.
-        mat_val = np.cos(2*np.pi/n)*np.eye(n) + 4*np.ones((n,n))/n
-        return constr + [mat_val >> (self + self.T)/2]
+        mat_val = np.cos(2 * np.pi / n) * np.eye(n) + 4 * np.ones((n, n)) / n
+        return constr + [mat_val >= (self + self.T) / 2]

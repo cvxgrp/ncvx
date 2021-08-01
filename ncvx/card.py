@@ -21,7 +21,8 @@ from .noncvx_variable import NonCvxVariable
 import cvxpy.interface.matrix_utilities as intf
 from itertools import product
 import numpy as np
-import cvxpy as cvx
+import cvxpy as cp
+
 
 class Card(NonCvxVariable):
     """ A variable with constrained cardinality. """
@@ -30,7 +31,7 @@ class Card(NonCvxVariable):
     def __init__(self, rows, k, M, *args, **kwargs):
         self.k = k
         self.M = M
-        super(Card, self).__init__(rows, 1, *args, **kwargs)
+        super().__init__((rows, 1), *args, **kwargs)
 
     def init_z(self, random):
         """Initializes the value of the replicant variable.
@@ -66,5 +67,5 @@ class Card(NonCvxVariable):
         """The convex relaxation.
         """
         constr = super(Card, self).relax()
-        return constr + [cvx.norm(self, 1) <= self.k*self.M,
-                         cvx.norm(self, 'inf') <= self.M]
+        return constr + [cp.norm(self, 1) <= self.k * self.M,
+                         cp.norm(self, 'inf') <= self.M]
