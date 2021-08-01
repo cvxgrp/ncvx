@@ -14,7 +14,7 @@ SNR = 20
 F = rng.standard_normal(size=(n, k))
 D_true = rng.exponential(1, size=(n, 1))
 Sigma_true = F @ F.T + np.diag(D_true)
-variance = cp.norm(Sigma_true, 'fro').value / (np.sqrt(n * n) * SNR)
+variance = cp.norm(Sigma_true, "fro").value / (np.sqrt(n * n) * SNR)
 noise = rng.normal(0, variance, size=(n, n))
 Sigma = Sigma_true + (noise + noise.T) / 2
 
@@ -36,7 +36,8 @@ def polish_func(sltn):
     Sigma_tmp = cp.Variable((k, k), symmetric=True)
     Sigma_small = pos_V @ Sigma_tmp @ pos_V.T
 
-    D_vec2 = cp.Variable(n); D = cp.diag(D_vec2)
+    D_vec2 = cp.Variable(n)
+    D = cp.diag(D_vec2)
     cost = cp.sum_squares(Sigma - Sigma_small - D)
     constraints = [D_vec >= 0, Sigma_lr >> 0]
     prob = cp.Problem(cp.Minimize(cost), constraints)
@@ -44,8 +45,16 @@ def polish_func(sltn):
     return result, {Sigma_lr.id: Sigma_small.value, D_vec.id: D_vec2.value}
 
 
-prob.solve(method="NC-ADMM", solver=cp.SCS, show_progress=True, parallel=False,
-           restarts=1, max_iter=10, polish_func=polish_func, polish_depth=10)
+prob.solve(
+    method="NC-ADMM",
+    solver=cp.SCS,
+    show_progress=True,
+    parallel=False,
+    restarts=1,
+    max_iter=10,
+    polish_func=polish_func,
+    polish_depth=10,
+)
 Sigma_lr.value = Sigma_lr.project(Sigma_lr.value)
 D_vec.value = cp.pos(D_vec).value
 print(f"NC-ADMM value = {cost.value}")
@@ -67,7 +76,7 @@ D_vec = cp.Variable(n)
 D = cp.diag(D_vec)
 cost = cp.sum_squares(Sigma - Sigma_lr - D)
 constraints = [D_vec >= 0]
-prob = cp.Problem(cp.Minimize(cost + gamma*reg), constraints)
+prob = cp.Problem(cp.Minimize(cost + gamma * reg), constraints)
 found_lr = False
 for gamma_val in np.logspace(-2, 2, num=100):
     gamma.value = gamma_val
@@ -76,8 +85,9 @@ for gamma_val in np.logspace(-2, 2, num=100):
     rank = sum(w > 1e-3)
     if rank <= k:
         # Polish.
-        polish_prob = cp.Problem(cp.Minimize(cost),
-                                 constraints + [Sigma_lr == Sigma_lr.value])
+        polish_prob = cp.Problem(
+            cp.Minimize(cost), constraints + [Sigma_lr == Sigma_lr.value]
+        )
         found_lr = True
         break
 assert found_lr

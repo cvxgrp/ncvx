@@ -24,6 +24,7 @@ import cvxpy as cp
 
 class Choose(Boolean):
     """ A variable with k 1's and all other entries 0. """
+
     def __init__(self, shape=(1, 1), k=None, *args, **kwargs):
         if k is None:
             raise Exception("Choose requires a value for k.")
@@ -39,7 +40,7 @@ class Choose(Boolean):
     # The k-largest values are set to 1. The remainder are set to 0.
     def _project(self, matrix):
         lin_index = np.squeeze(np.asarray(matrix)).flatten().argsort()[::-1]
-        sub_index = np.unravel_index(lin_index[:self.k], matrix.shape)
+        sub_index = np.unravel_index(lin_index[: self.k], matrix.shape)
         matrix[:] = 0.0
         matrix[sub_index] = 1.0
         return matrix
@@ -55,16 +56,19 @@ class Choose(Boolean):
         neighbors_list = []
         for i in range(self.shape[0]):
             for j in range(self.shape[1]):
-                if matrix[i,j] == 1:
-                    for k in range(i-1,i+1):
-                        for l in range(j-1,j+1):
-                            if k != i and l != j and \
-                               0 <= k < self.shape[0] and \
-                               0 <= l < self.shape[1] and \
-                               matrix[k, l] == 0:
-                               new_mat = matrix.copy()
-                               new_mat[i, j] = 0
-                               new_mat[k, l] = 1
-                               neighbors_list += [new_mat]
+                if matrix[i, j] == 1:
+                    for k in range(i - 1, i + 1):
+                        for l in range(j - 1, j + 1):
+                            if (
+                                k != i
+                                and l != j
+                                and 0 <= k < self.shape[0]
+                                and 0 <= l < self.shape[1]
+                                and matrix[k, l] == 0
+                            ):
+                                new_mat = matrix.copy()
+                                new_mat[i, j] = 0
+                                new_mat[k, l] = 1
+                                neighbors_list += [new_mat]
 
         return neighbors_list

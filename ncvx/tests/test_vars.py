@@ -24,8 +24,7 @@ from ncvx import *
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-solve_args = {'method': 'NC-ADMM', 'solver': cp.SCS, 'parallel': True,
-              'verbose': False}
+solve_args = {"method": "NC-ADMM", "solver": cp.SCS, "parallel": True, "verbose": False}
 
 
 def approx(x, abs=1e-5, *args, **kwargs):
@@ -78,8 +77,7 @@ def test_card():
     x = Variable((5, 4))
     c = Choose((5, 4), k=4)
     b = Boolean((5, 4))
-    p = cp.Problem(Minimize(sum(1 - x) + sum(x)),
-                   [x == c, x == b])
+    p = cp.Problem(Minimize(sum(1 - x) + sum(x)), [x == c, x == b])
     result = p.solve(**solve_args)
     assert result[0] == approx(20)
     for v in np.nditer(x.value):

@@ -5,14 +5,16 @@ import time
 
 np.random.seed(1)
 
-m = 100; n = 10 * m; k = 10
+m = 100
+n = 10 * m
+k = 10
 print(f"m = {m}, n = {n}, k = {k}")
 
 c = np.random.uniform(0, 1, size=(n, 1))
 A = np.zeros((m * n, 1))
 arr = np.arange(m * n)
 np.random.shuffle(arr)
-positions = arr[0: m * n // k]
+positions = arr[0 : m * n // k]
 A[positions] = np.random.uniform(0, 5, size=(m * n // k, 1))
 A = cp.reshape(A, (m, n)).value
 a = np.random.randint(1, 6, size=(n, 1))
@@ -36,8 +38,8 @@ def neighbor_func(z_val, cur_merit):
     for i in range(z_val.shape[0]):
         vals = [1, -1] if z_val[i] > 0 else [1]
         for op in vals:
-            obj2 = obj - op*c[i]
-            resid2 = resid + op*A[:, i]
+            obj2 = obj - op * c[i]
+            resid2 = resid + op * A[:, i]
             rmax = resid2.max()
             if obj2 < best_merit and rmax < 1e-3:
                 print(best_merit)
@@ -51,9 +53,16 @@ def neighbor_func(z_val, cur_merit):
 
 # NC-ADMM heuristic
 tic = time.perf_counter()
-val, resid = prob.solve(method="NC-ADMM", solver=cp.CVXOPT,
-                        polish_depth=5, show_progress=True, parallel=False,
-                        neighbor_func=neighbor_func, max_iter=25, restarts=5)
+val, resid = prob.solve(
+    method="NC-ADMM",
+    solver=cp.CVXOPT,
+    polish_depth=5,
+    show_progress=True,
+    parallel=False,
+    neighbor_func=neighbor_func,
+    max_iter=25,
+    restarts=5,
+)
 toc = time.perf_counter()
 print(f"NC-ADMM residual = {resid}")
 print(f"NC-ADMM value    = {val}")
@@ -68,7 +77,6 @@ print(f"Solve time = {toc - tic:.4f} seconds.")
 if cp.GUROBI in cp.installed_solvers():
     z = cp.Variable((n, 1), integer=True)
     cost = c.T * z
-    prob = cp.Problem(cp.Maximize(cost),
-                      [z <= a, z >= 0, A @ z <= b])
+    prob = cp.Problem(cp.Maximize(cost), [z <= a, z >= 0, A @ z <= b])
     prob.solve(solver=cp.GUROBI, TimeLimit=20, verbose=True)
     print("Gurobi value =", cost.value)

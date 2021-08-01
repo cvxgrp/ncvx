@@ -25,6 +25,7 @@ import cvxpy as cp
 class Partition(Boolean):
     """ A boolean matrix with exactly one 1 in each row.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -33,7 +34,7 @@ class Partition(Boolean):
         """
         result = np.zeros(self.shape)
         for i in range(self.shape[0]):
-            idx = np.argmax(matrix[i,:])
+            idx = np.argmax(matrix[i, :])
             result[i, idx] = 1
         return result
         # ordering = self.a.T.dot(result)
@@ -65,8 +66,8 @@ class Partition(Boolean):
             for j in range(self.shape[1]):
                 if j != idxs[i] and abs(j - idxs[i]) <= 1:
                     new_mat = matrix.copy()
-                    new_mat[i,j] = 1
-                    new_mat[i,idxs[i]] = 0
+                    new_mat[i, j] = 1
+                    new_mat[i, idxs[i]] = 0
                     neighbors_list += [new_mat]
         return neighbors_list
 

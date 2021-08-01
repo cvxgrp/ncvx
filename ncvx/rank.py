@@ -31,6 +31,7 @@ def Rank(shape, k, M=None, symmetric=False):
 
 class AsymmRank(NonCvxVariable):
     """ A variable satisfying Rank(X) <= k. """
+
     def __init__(self, shape, k, M, *args, **kwargs):
         self.k = k
         self.M = M
@@ -48,13 +49,13 @@ class AsymmRank(NonCvxVariable):
         """All singular values except k-largest (by magnitude) set to zero.
         """
         U, s, V = np.linalg.svd(matrix)
-        s[self.k:] = 0
+        s[self.k :] = 0
         return U.dot(np.diag(s)).dot(V)
 
     def _restrict(self, matrix):
         U, s, V = np.linalg.svd(matrix)
         Sigma = cp.Variable(self.k, self.k)
-        return [self == U[:, :self.k] * Sigma*V.T[:self.k, :]]
+        return [self == U[:, : self.k] * Sigma * V.T[: self.k, :]]
 
     def relax(self):
         if self.M is None:
@@ -71,15 +72,15 @@ class SymmRank(AsymmRank):
         """
         w, V = np.linalg.eigh(matrix)
         w_sorted_idxs = np.argsort(-w)
-        w[w_sorted_idxs[self.k:]] = 0
+        w[w_sorted_idxs[self.k :]] = 0
         return V.dot(np.diag(w)).dot(V.T)
 
     # Constrain all entries to be the value in the matrix.
     def _restrict(self, matrix):
         w, V = np.linalg.eigh(matrix)
         w_sorted_idxs = np.argsort(-w)
-        pos_w = w[w_sorted_idxs[:self.k]]
-        pos_V = V[:, w_sorted_idxs[:self.k]]
+        pos_w = w[w_sorted_idxs[: self.k]]
+        pos_V = V[:, w_sorted_idxs[: self.k]]
         Sigma = cp.Variable(shape=(self.k, self.k), symmetric=True)
         return [self == pos_V @ Sigma @ pos_V.T]
 

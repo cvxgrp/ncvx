@@ -42,10 +42,9 @@ def run():
     x = nc.Card(n, k, M)
     cost = cp.sum_squares(A @ x - b)
     prob = cp.Problem(cp.Minimize(cost))
-    RESTARTS = 5;
+    RESTARTS = 5
     ITERS = 50
-    prob.solve(method="NC-ADMM", restarts=RESTARTS,
-               num_procs=5, max_iter=ITERS)
+    prob.solve(method="NC-ADMM", restarts=RESTARTS, num_procs=5, max_iter=ITERS)
     print("NC-ADMM value =", cost.value)
     print("NC-ADMM solution =\n", np.around(x.value.T, decimals=3))
     print("--------------------------------------------------------------------")
@@ -68,8 +67,9 @@ def run():
         card = sum(cp.abs(x).value > 1e-3)
         if card <= k:
             # Polish.
-            polish_prob = cp.Problem(cp.Minimize(cost),
-                                     [cp.abs(x) <= (cp.abs(x).value > 1e-3) * M])
+            polish_prob = cp.Problem(
+                cp.Minimize(cost), [cp.abs(x) <= (cp.abs(x).value > 1e-3) * M]
+            )
             polish_prob.solve()
             found_card = True
             break
@@ -78,6 +78,6 @@ def run():
     print("Lasso solution =\n", np.around(x.value.T, decimals=3))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     freeze_support()
     run()

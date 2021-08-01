@@ -26,6 +26,7 @@ import cvxpy as cp
 
 class Card(NonCvxVariable):
     """ A variable with constrained cardinality. """
+
     # k - the maximum cardinality of the variable.
     # M - upper bound on ||x||_inf
     def __init__(self, rows, k, M, *args, **kwargs):
@@ -37,9 +38,9 @@ class Card(NonCvxVariable):
         """Initializes the value of the replicant variable.
         """
         if random:
-            alpha = np.random.uniform(0, self.k*self.M)
+            alpha = np.random.uniform(0, self.k * self.M)
             y = np.random.uniform(-self.M, self.M, size=self.shape)
-            self.z.value = y*alpha/np.abs(y).sum()
+            self.z.value = y * alpha / np.abs(y).sum()
         else:
             self.z.value = np.zeros(self.shape)
 
@@ -48,8 +49,8 @@ class Card(NonCvxVariable):
         indices = product(list(range(self.shape[0])), list(range(self.shape[1])))
         v_ind = sorted(indices, key=lambda ind: -abs(matrix[ind]))
         result = matrix.copy()
-        for ind in v_ind[self.k:]:
-           result[ind] = 0
+        for ind in v_ind[self.k :]:
+            result[ind] = 0
         return np.maximum(-self.M, np.minimum(result, self.M))
 
     # Constrain all entries to be zero that correspond to
@@ -67,5 +68,7 @@ class Card(NonCvxVariable):
         """The convex relaxation.
         """
         constr = super(Card, self).relax()
-        return constr + [cp.norm(self, 1) <= self.k * self.M,
-                         cp.norm(self, 'inf') <= self.M]
+        return constr + [
+            cp.norm(self, 1) <= self.k * self.M,
+            cp.norm(self, "inf") <= self.M,
+        ]

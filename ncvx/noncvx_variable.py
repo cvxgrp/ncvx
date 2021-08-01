@@ -39,8 +39,9 @@ class NonCvxVariable(cp.Variable):
     # Verify that the matrix has the same dimensions as the variable.
     def validate_matrix(self, matrix):
         if self.shape != intf.shape(matrix):
-            raise Exception(("The argument's dimensions must match "
-                             "the variable's dimensions."))
+            raise Exception(
+                ("The argument's dimensions must match " "the variable's dimensions.")
+            )
 
     # Wrapper to validate matrix.
     def project(self, matrix):

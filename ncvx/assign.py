@@ -28,6 +28,7 @@ class Assign(Boolean):
 
         Assign jobs x workers. Assign one worker to each job.
     """
+
     def __init__(self, shape=(), *args, **kwargs):
         assert shape[0] >= shape[1]
         super().__init__(shape=shape, *args, **kwargs)
@@ -39,7 +40,7 @@ class Assign(Boolean):
             # This is a distribution over all relaxations.
             # http://planetmath.org/proofofbirkhoffvonneumanntheorem
             result = np.zeros(self.shape)
-            num_entries = self.shape[0]*self.shape[1]
+            num_entries = self.shape[0] * self.shape[1]
             weights = np.random.uniform(size=num_entries)
             weights /= weights.sum()
             for k in range(num_entries):
@@ -70,10 +71,10 @@ class Assign(Boolean):
         """Neighbors swap adjacent rows.
         """
         neighbors_list = []
-        for i in range(self.shape[0]-1):
+        for i in range(self.shape[0] - 1):
             new_mat = matrix.copy()
-            new_mat[i+1,:] = matrix[i,:]
-            new_mat[i,:] = matrix[i+1,:]
+            new_mat[i + 1, :] = matrix[i, :]
+            new_mat[i, :] = matrix[i + 1, :]
             neighbors_list += [new_mat]
         return neighbors_list
 

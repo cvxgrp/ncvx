@@ -28,6 +28,7 @@ class Tour(Assign):
     """ A permutation matrix that describes a single cycle.
         e.g. 1->3->5->2->4->1
     """
+
     def __init__(self, n, *args, **kwargs):
         super().__init__(shape=(n, n), *args, **kwargs)
 
@@ -50,8 +51,8 @@ class Tour(Assign):
                     tour[row] = col
                     if self._no_cycles(tour):
                         result[row, col] = 1
-                        matrix[row,:] = -np.inf
-                        matrix[:,col] = -np.inf
+                        matrix[row, :] = -np.inf
+                        matrix[:, col] = -np.inf
                         break
                     else:
                         matrix[row, col] = -np.inf

@@ -24,6 +24,7 @@ import numpy as np
 
 class Integer(NonCvxVariable):
     """ An integer variable. """
+
     # M - upper bound on |x|
     def __init__(self, shape, M=None, *args, **kwargs):
         if M is None or np.any(M <= 0):
@@ -50,9 +51,9 @@ class Integer(NonCvxVariable):
         neighbors_list = []
         for i in range(self.shape[0]):
             for j in range(self.shape[1]):
-                for diff in [1,-1]:
+                for diff in [1, -1]:
                     new_mat = matrix.copy()
-                    new_mat[i,j] = new_mat[i,j] + diff
+                    new_mat[i, j] = new_mat[i, j] + diff
                     neighbors_list += [new_mat]
         return neighbors_list
 

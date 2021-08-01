@@ -39,6 +39,7 @@ class GroupAssign(Boolean):
         sum_i X_ij = s_j
         X_ij \in {0, 1}
     """
+
     def __init__(self, shape, col_sum, *args, **kwargs):
         assert shape[0] >= shape[1]
         assert shape[0] == sum(col_sum)
@@ -48,7 +49,7 @@ class GroupAssign(Boolean):
     def init_z(self, random):
         if random:
             result = np.zeros(self.shape)
-            num_entries = self.shape[0]*self.shape[1]
+            num_entries = self.shape[0] * self.shape[1]
             weights = np.random.uniform(size=num_entries)
             weights /= weights.sum()
             for k in range(num_entries):
@@ -57,7 +58,7 @@ class GroupAssign(Boolean):
                     result[assignment[j], j] += weights[k]
             self.z.value = result
         else:
-            self.z.value = np.ones(self.shape)/self.shape[1]
+            self.z.value = np.ones(self.shape) / self.shape[1]
 
     # Compute projection with maximal weighted matching.
     def _project(self, matrix):
@@ -85,7 +86,7 @@ class GroupAssign(Boolean):
 
         """
         neighbors_list = []
-        for i in range(self.shape[0]-1):
+        for i in range(self.shape[0] - 1):
             # Add to neighbor only when the candidate person (row) is in a different group.
             new_mat = matrix.copy()
             for j in range(i + 1, self.shape[0] - 1):
@@ -104,5 +105,5 @@ class GroupAssign(Boolean):
         constr = super().relax()
         return constr + [
             cp.sum(self, axis=1) == 1,
-            cp.sum(self, axis=0) == self.col_sum[np.newaxis, :]
+            cp.sum(self, axis=0) == self.col_sum[np.newaxis, :],
         ]

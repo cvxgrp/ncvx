@@ -24,6 +24,7 @@ import numpy as np
 
 class Sphere(NonCvxVariable):
     """ A variable satisfying ||x||_2 = 1. """
+
     def __init__(self, rows=1, *args, **kwargs):
         super().__init__(shape=(rows, 1), *args, **kwargs)
 
@@ -33,7 +34,7 @@ class Sphere(NonCvxVariable):
         if random:
             length = np.random.uniform()
             direction = np.random.randn(self.shape)
-            self.z.value = length*direction/norm(direction, 2).value
+            self.z.value = length * direction / norm(direction, 2).value
         else:
             self.z.value = np.zeros(self.shape)
 

@@ -63,10 +63,16 @@ def run():
     prob = cp.Problem(cp.Minimize(cost), [])
 
     tic = time.perf_counter()
-    val, result = prob.solve(method="NC-ADMM", polish_depth=5, solver=cp.SCS,
-                             show_progress=True, neighbor_func=neighbor_func,
-                             parallel=True, restarts=1,
-                             max_iter=50)
+    val, result = prob.solve(
+        method="NC-ADMM",
+        polish_depth=5,
+        solver=cp.SCS,
+        show_progress=True,
+        neighbor_func=neighbor_func,
+        parallel=True,
+        restarts=1,
+        max_iter=50,
+    )
     toc = time.perf_counter()
     print(f"Solve time = {toc - tic:.4f} seconds.")
     print("final value", cost.value)
@@ -74,12 +80,15 @@ def run():
     # Plotting
     ordered = (X @ P.T).value
     for i in range(n):
-        plt.plot([X[0, i], ordered[0, i]],
-                 [X[1, i], ordered[1, i]],
-                 color='brown', marker='o')
+        plt.plot(
+            [X[0, i], ordered[0, i]],
+            [X[1, i], ordered[1, i]],
+            color="brown",
+            marker="o",
+        )
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     freeze_support()
     run()

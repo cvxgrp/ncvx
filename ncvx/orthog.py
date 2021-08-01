@@ -24,6 +24,7 @@ import numpy as np
 
 class Orthog(NonCvxVariable):
     """ A variable satisfying X^TX = I. """
+
     def __init__(self, size, *args, **kwargs):
         super().__init__(shape=(size, size), *args, **kwargs)
 
@@ -48,6 +49,5 @@ class Orthog(NonCvxVariable):
         """
         rows, cols = self.shape
         constr = super(Orthog, self).relax()
-        mat = cp.bmat([[np.eye(rows), self],
-                       [X.T, np.eye(cols)]])
+        mat = cp.bmat([[np.eye(rows), self], [X.T, np.eye(cols)]])
         return constr + [mat >> 0]
