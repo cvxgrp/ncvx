@@ -89,7 +89,7 @@ def test_permutation():
     x = Variable((1, 5))
     c = np.array([[1, 2, 3, 4, 5]])
     perm = Assign((5, 5))
-    p = Problem(Minimize(sum(x)), [x == c * perm])
+    p = Problem(Minimize(sum(x)), [x == c @ perm])
     result = p.solve(**solve_args)
     assert result[0] == approx(15)
     assert_array_almost_equal(sorted(np.nditer(x.value)), c.ravel())
