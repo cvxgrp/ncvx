@@ -9,9 +9,9 @@ Installation
 ------------
 You should first install CVXPY version >= 1.1.13. The CVXPY install guide can be found [here](http://www.cvxpy.org/).
 
-Then install ``scsprox`` from source [here](https://github.com/bettbra/scsprox).
+Then install ``scsprox`` from source [here](https://github.com/bettbra/scsprox). DO NOT INSTALL FROM PIP.
 
-The easiest way to install the package is to run ``pip install ncvx``. To install the package from source, run ``python setup.py install`` in the main folder.
+You can then install ``ncvx`` by running ``pip install ncvx``. You may also install NCVX from source, by cloning the repo and running ``python setup.py install`` in the main folder.
 
 Example
 -------
