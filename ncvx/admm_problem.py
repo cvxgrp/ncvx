@@ -468,7 +468,7 @@ def relax_round_polish(
                 )
             else:
                 noncvx_vars = rel_prob.variables()
-                sltn = noncvx_vars[0].z.value.A.copy()
+                sltn = np.asarray(noncvx_vars[0].z.value).copy()
                 noncvx_vars[0].value = sltn
                 cur_merit = rel_prob.objective.value
 
